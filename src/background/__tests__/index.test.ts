@@ -1,0 +1,208 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Account } from '../../lib/types';
+
+const mockSendMessage = vi.fn();
+const mockTabsGet = vi.fn();
+const mockTabsQuery = vi.fn();
+const mockCaptureVisibleTab = vi.fn();
+const mockTabsSendMessage = vi.fn();
+const mockGetAccounts = vi.fn();
+const mockMatchURL = vi.fn();
+const mockGenerateCode = vi.fn();
+
+vi.mock('../../lib/storage', () => ({
+  getAccounts: mockGetAccounts,
+}));
+
+vi.mock('../../lib/url-match', () => ({
+  matchURL: mockMatchURL,
+}));
+
+vi.mock('../../lib/totp', () => ({
+  generateCode: mockGenerateCode,
+}));
+
+const webNavigationListeners: Array<(details: { frameId: number; tabId: number }) => void> = [];
+const runtimeMessageListeners: Array<(message: { action: string; payload?: unknown }, sender: { tab?: { windowId?: number } }, sendResponse: (response: unknown) => void) => boolean | void> = [];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  webNavigationListeners.length = 0;
+  runtimeMessageListeners.length = 0;
+
+  vi.stubGlobal('chrome', {
+    webNavigation: {
+      onCompleted: {
+        addListener: vi.fn((listener: (details: { frameId: number; tabId: number }) => void) => {
+          webNavigationListeners.push(listener);
+        }),
+      },
+    },
+    tabs: {
+      get: mockTabsGet,
+      query: mockTabsQuery.mockImplementation((query: unknown, callback: (tabs: Array<{ id?: number }>) => void) => {
+        callback([]);
+      }),
+      sendMessage: mockTabsSendMessage,
+      captureVisibleTab: mockCaptureVisibleTab,
+    },
+    runtime: {
+      onMessage: {
+        addListener: vi.fn((listener: (message: { action: string; payload?: unknown }, sender: { tab?: { windowId?: number } }, sendResponse: (response: unknown) => void) => boolean | void) => {
+          runtimeMessageListeners.push(listener);
+        }),
+      },
+      sendMessage: mockSendMessage,
+    },
+  } as unknown as typeof chrome);
+
+  vi.resetModules();
+});
+
+describe('background script', () => {
+  it('should register webNavigation.onCompleted listener', async () => {
+    await import('../index');
+    expect(chrome.webNavigation.onCompleted.addListener).toHaveBeenCalledOnce();
+  });
+
+  it('should register runtime.onMessage listener', async () => {
+    await import('../index');
+    expect(chrome.runtime.onMessage.addListener).toHaveBeenCalledOnce();
+  });
+
+  describe('URL matching on navigation', () => {
+    it('should skip non-main frames', async () => {
+      await import('../index');
+      const listener = webNavigationListeners[0];
+
+      await listener({ frameId: 1, tabId: 1 });
+
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('should skip if tab has no URL', async () => {
+      mockTabsGet.mockResolvedValue({ url: undefined });
+      await import('../index');
+      const listener = webNavigationListeners[0];
+
+      await listener({ frameId: 0, tabId: 1 });
+
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('should send AUTOFILL with matched accounts', async () => {
+      const accounts: Account[] = [
+        { id: '1', name: 'Test', issuer: 'Test', secret: 'JBSWY3DPEHPK3PXP', urlPattern: 'github.com', createdAt: 0, sortOrder: 0 },
+        { id: '2', name: 'Other', issuer: 'Other', secret: 'JBSWY3DPEHPK3PXP', urlPattern: 'gitlab.com', createdAt: 0, sortOrder: 1 },
+      ];
+
+      mockTabsGet.mockResolvedValue({ url: 'https://github.com/login' });
+      mockGetAccounts.mockResolvedValue(accounts);
+      mockMatchURL.mockImplementation((pattern: string, url: string) => pattern === 'github.com');
+
+      await import('../index');
+      const listener = webNavigationListeners[0];
+
+      await listener({ frameId: 0, tabId: 1 });
+
+      expect(mockTabsSendMessage).toHaveBeenCalledWith(1, {
+        action: 'AUTOFILL',
+        payload: { accounts: [accounts[0]] },
+      });
+    });
+
+    it('should not send message if no accounts match', async () => {
+      mockTabsGet.mockResolvedValue({ url: 'https://example.com' });
+      mockGetAccounts.mockResolvedValue([]);
+      mockMatchURL.mockReturnValue(false);
+
+      await import('../index');
+      const listener = webNavigationListeners[0];
+
+      await listener({ frameId: 0, tabId: 1 });
+
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('should skip accounts without urlPattern', async () => {
+      const accounts: Account[] = [
+        { id: '1', name: 'Test', issuer: 'Test', secret: 'JBSWY3DPEHPK3PXP', createdAt: 0, sortOrder: 0 },
+      ];
+
+      mockTabsGet.mockResolvedValue({ url: 'https://github.com/login' });
+      mockGetAccounts.mockResolvedValue(accounts);
+
+      await import('../index');
+      const listener = webNavigationListeners[0];
+
+      await listener({ frameId: 0, tabId: 1 });
+
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('message handling', () => {
+    it('should forward SCAN_QR to active tab', async () => {
+      mockTabsQuery.mockImplementation((query: unknown, callback: (tabs: Array<{ id?: number }>) => void) => {
+        callback([{ id: 42 }]);
+      });
+
+      await import('../index');
+      const listener = runtimeMessageListeners[0];
+
+      listener({ action: 'SCAN_QR' }, { tab: undefined }, vi.fn());
+
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(mockTabsSendMessage).toHaveBeenCalledWith(42, { action: 'SCAN_QR' });
+    });
+
+    it('should handle CAPTURE_TAB and return dataUrl', async () => {
+      mockCaptureVisibleTab.mockImplementation(
+        (_windowId: number, _options: { format: string }, callback: (dataUrl: string) => void) => {
+          callback('data:image/png;base64,abc123');
+        }
+      );
+
+      await import('../index');
+      const listener = runtimeMessageListeners[0];
+
+      const sendResponse = vi.fn();
+      const result = listener(
+        { action: 'CAPTURE_TAB' },
+        { tab: { windowId: 100 } },
+        sendResponse
+      );
+
+      expect(result).toBe(true);
+      expect(mockCaptureVisibleTab).toHaveBeenCalledWith(100, { format: 'png' }, expect.any(Function));
+      expect(sendResponse).toHaveBeenCalledWith({ dataUrl: 'data:image/png;base64,abc123' });
+    });
+
+    it('should forward QR_SCANNED via runtime.sendMessage', async () => {
+      await import('../index');
+      const listener = runtimeMessageListeners[0];
+
+      const payload = { secret: 'JBSWY3DPEHPK3PXP', issuer: 'Test', name: 'test@example.com' };
+      listener({ action: 'QR_SCANNED', payload }, { tab: undefined }, vi.fn());
+
+      expect(mockSendMessage).toHaveBeenCalledWith({
+        action: 'QR_SCANNED',
+        payload,
+      });
+    });
+
+    it('should forward AUTOFILL_STATUS via runtime.sendMessage', async () => {
+      await import('../index');
+      const listener = runtimeMessageListeners[0];
+
+      const payload = { state: 'SUCCESS' };
+      listener({ action: 'AUTOFILL_STATUS', payload }, { tab: undefined }, vi.fn());
+
+      expect(mockSendMessage).toHaveBeenCalledWith({
+        action: 'AUTOFILL_STATUS',
+        payload,
+      });
+    });
+  });
+});
