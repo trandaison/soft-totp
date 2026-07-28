@@ -3,6 +3,19 @@ import type { Account, AutofillState } from '../lib/types';
 
 let floatingIcon: HTMLDivElement | null = null;
 let dropupMenu: HTMLDivElement | null = null;
+let floatingIconClickHandler: (() => void) | null = null;
+let documentClickHandler: ((e: MouseEvent) => void) | null = null;
+
+function fadeOutAndRemove(): void {
+  if (!floatingIcon) return;
+  floatingIcon.style.opacity = '0';
+  setTimeout(() => {
+    if (floatingIcon && floatingIcon.parentNode) {
+      floatingIcon.parentNode.removeChild(floatingIcon);
+      floatingIcon = null;
+    }
+  }, 300);
+}
 
 function createFloatingIcon(): HTMLDivElement {
   const icon = document.createElement('div');
@@ -42,33 +55,13 @@ function updateIconState(state: AutofillState, message?: string): void {
       floatingIcon.innerHTML = '✓';
       floatingIcon.title = message || 'Code filled successfully';
       floatingIcon.style.background = '#2ecc71';
-      setTimeout(() => {
-        if (floatingIcon) {
-          floatingIcon.style.opacity = '0';
-          setTimeout(() => {
-            if (floatingIcon && floatingIcon.parentNode) {
-              floatingIcon.parentNode.removeChild(floatingIcon);
-              floatingIcon = null;
-            }
-          }, 300);
-        }
-      }, 5000);
+      setTimeout(fadeOutAndRemove, 5000);
       break;
     case 'ERROR':
       floatingIcon.innerHTML = '✕';
       floatingIcon.title = message || 'Error occurred';
       floatingIcon.style.background = '#e74c3c';
-      setTimeout(() => {
-        if (floatingIcon) {
-          floatingIcon.style.opacity = '0';
-          setTimeout(() => {
-            if (floatingIcon && floatingIcon.parentNode) {
-              floatingIcon.parentNode.removeChild(floatingIcon);
-              floatingIcon = null;
-            }
-          }, 300);
-        }
-      }, 5000);
+      setTimeout(fadeOutAndRemove, 5000);
       break;
     case 'MULTIPLE':
       floatingIcon.innerHTML = '⋯';
@@ -192,13 +185,16 @@ function createDropupMenu(accounts: Account[]): void {
 
   document.body.appendChild(dropupMenu);
 
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes twofa-spin {
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
+  if (!document.getElementById('twofa-spin-style')) {
+    const style = document.createElement('style');
+    style.id = 'twofa-spin-style';
+    style.textContent = `
+      @keyframes twofa-spin {
+        to { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 }
 
 function closeDropupMenu(): void {
@@ -261,15 +257,22 @@ export async function handleAutofill(accounts: Account[]): Promise<void> {
     fillCode(accounts[0], code);
     updateIconState('MULTIPLE');
 
-    floatingIcon?.addEventListener('click', () => {
+    if (floatingIconClickHandler) {
+      floatingIcon?.removeEventListener('click', floatingIconClickHandler);
+    }
+    if (documentClickHandler) {
+      document.removeEventListener('click', documentClickHandler);
+    }
+
+    floatingIconClickHandler = () => {
       if (dropupMenu) {
         closeDropupMenu();
       } else {
         createDropupMenu(accounts);
       }
-    });
+    };
 
-    document.addEventListener('click', (e) => {
+    documentClickHandler = (e: MouseEvent) => {
       if (
         dropupMenu &&
         !dropupMenu.contains(e.target as Node) &&
@@ -277,6 +280,9 @@ export async function handleAutofill(accounts: Account[]): Promise<void> {
       ) {
         closeDropupMenu();
       }
-    });
+    };
+
+    floatingIcon?.addEventListener('click', floatingIconClickHandler);
+    document.addEventListener('click', documentClickHandler);
   }
 }
