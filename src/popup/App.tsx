@@ -4,6 +4,7 @@ import { AddAccountForm } from './AddAccountForm';
 import { EditAccountForm } from './EditAccountForm';
 import { getAccounts, saveAccount, deleteAccount, updateAccount } from '../lib/storage';
 import type { Account } from '../lib/types';
+import { colors } from '../lib/colors';
 
 export function App() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -75,28 +76,29 @@ export function App() {
   };
 
   return (
-    <div style={{ width: 350, minHeight: 400, background: '#f5f5f5' }}>
+    <div style={{ width: 350, minHeight: 400, background: colors.bg }}>
       <div style={{
-        background: '#3498db',
-        color: '#fff',
+        background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
+        color: colors.textLight,
         padding: '16px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
       }}>
-        <h1 style={{ margin: 0, fontSize: '18px' }}>2FA Manager</h1>
+        <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>2FA Manager</h1>
         {!showForm && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => setShowForm('add')}
               style={{
-                background: '#fff',
-                color: '#3498db',
+                background: colors.textLight,
+                color: colors.primary,
                 border: 'none',
                 borderRadius: '6px',
                 padding: '6px 12px',
                 cursor: 'pointer',
                 fontSize: '12px',
+                fontWeight: 500,
               }}
             >
               + Add
@@ -105,12 +107,13 @@ export function App() {
               onClick={handleScanQR}
               style={{
                 background: 'rgba(255,255,255,0.2)',
-                color: '#fff',
+                color: colors.textLight,
                 border: 'none',
                 borderRadius: '6px',
                 padding: '6px 12px',
                 cursor: 'pointer',
                 fontSize: '12px',
+                fontWeight: 500,
               }}
             >
               Scan QR

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Account } from '../lib/types';
 import { generateCode } from '../lib/totp';
 import { getLogoById, findLogoForAccount } from '../lib/logos';
+import { colors } from '../lib/colors';
 
 interface Props {
   account: Account;
@@ -70,7 +71,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#666',
+    color: colors.textSecondary,
     fontSize: '16px',
     lineHeight: 1,
   };
@@ -80,10 +81,11 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
       display: 'flex',
       alignItems: 'center',
       padding: '12px',
-      background: '#fff',
+      background: colors.bgCard,
       borderRadius: '8px',
       marginBottom: '8px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+      border: `1px solid ${colors.borderLight}`,
     }}>
       <div style={{
         position: 'relative',
@@ -96,13 +98,13 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
         justifyContent: 'center',
       }}>
         <svg width="40" height="40" viewBox="0 0 40 40" style={{ position: 'absolute', top: 0, left: 0 }}>
-          <circle cx="20" cy="20" r="18" fill="none" stroke="#eee" strokeWidth="2" />
+          <circle cx="20" cy="20" r="18" fill="none" stroke={colors.borderLight} strokeWidth="2" />
           <circle
             cx="20"
             cy="20"
             r="18"
             fill="none"
-            stroke={remaining < 5 ? '#e74c3c' : '#2ecc71'}
+            stroke={remaining < 5 ? colors.ringWarning : colors.ringNormal}
             strokeWidth="2"
             strokeDasharray={circumference}
             strokeDashoffset={dashoffset}
@@ -124,7 +126,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
               style={{ width: '24px', height: '24px', objectFit: 'contain' }}
             />
           ) : (
-            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: colors.primary }}>
               {account.name.charAt(0).toUpperCase()}
             </span>
           )}
@@ -137,6 +139,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
+          color: colors.textPrimary,
         }}>
           {account.name}
         </div>
@@ -152,13 +155,13 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
               fontSize: '20px',
               fontWeight: 'bold',
               letterSpacing: '2px',
-              color: '#333',
+              color: colors.textPrimary,
             }}>
               {code}
             </span>
             <span style={{
               fontSize: '11px',
-              color: remaining < 5 ? '#e74c3c' : '#999',
+              color: remaining < 5 ? colors.ringWarning : colors.textSecondary,
               fontWeight: remaining < 5 ? 600 : 400,
             }}>
               {remaining}s
@@ -172,7 +175,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
                 ...iconBtnStyle,
                 width: '24px',
                 height: '24px',
-                color: copied ? '#2ecc71' : '#666',
+                color: copied ? colors.success : colors.textSecondary,
               }}
             >
               {copied ? (
@@ -207,12 +210,13 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
                   position: 'absolute',
                   top: '100%',
                   right: 0,
-                  background: '#fff',
+                  background: colors.bgCard,
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                   zIndex: 100,
                   minWidth: '120px',
                   overflow: 'hidden',
+                  border: `1px solid ${colors.border}`,
                 }}>
                   <button
                     onClick={() => { onEdit(account.id); setShowMenu(false); }}
@@ -226,7 +230,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
                       background: 'none',
                       cursor: 'pointer',
                       fontSize: '13px',
-                      color: '#333',
+                      color: colors.textPrimary,
                     }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -235,7 +239,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
                     </svg>
                     Edit
                   </button>
-                  <div style={{ height: '1px', background: '#eee' }} />
+                  <div style={{ height: '1px', background: colors.borderLight }} />
                   <button
                     onClick={() => {
                       if (window.confirm('Are you sure you want to delete this account?')) {
@@ -253,7 +257,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
                       background: 'none',
                       cursor: 'pointer',
                       fontSize: '13px',
-                      color: '#e74c3c',
+                      color: colors.error,
                     }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
