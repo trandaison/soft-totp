@@ -50,8 +50,13 @@ export function App() {
     await loadAccounts();
   };
 
+  const handleEdit = (id: string) => {
+    chrome.runtime.openOptionsPage();
+  };
+
   const handleScanQR = () => {
     chrome.runtime.sendMessage({ action: 'SCAN_QR' });
+    window.close();
   };
 
   return (
@@ -109,7 +114,7 @@ export function App() {
             initialData={scannedData || undefined}
           />
         ) : (
-          <AccountList accounts={accounts} onDelete={handleDelete} />
+          <AccountList accounts={accounts} onDelete={handleDelete} onEdit={handleEdit} />
         )}
       </div>
     </div>

@@ -4,9 +4,10 @@ import { AccountCard } from './AccountCard';
 interface Props {
   accounts: Account[];
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
 }
 
-export function AccountList({ accounts, onDelete }: Props) {
+export function AccountList({ accounts, onDelete, onEdit }: Props) {
   if (accounts.length === 0) {
     return (
       <div style={{
@@ -26,6 +27,7 @@ export function AccountList({ accounts, onDelete }: Props) {
           key={account.id}
           account={account}
           onDelete={onDelete}
+          onEdit={onEdit}
         />
       ))}
     </div>
