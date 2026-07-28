@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { AccountList } from './AccountList';
 import { AddAccountForm } from './AddAccountForm';
 import { getAccounts, saveAccount, deleteAccount } from '../lib/storage';
-import { parseQRContent } from '../lib/qr';
 import type { Account } from '../lib/types';
 
 export function App() {

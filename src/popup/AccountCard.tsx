@@ -13,9 +13,14 @@ export function AccountCard({ account, onDelete }: Props) {
 
   useEffect(() => {
     const update = () => {
-      const result = generateCode(account.secret);
-      setCode(result.code);
-      setRemaining(result.remaining);
+      try {
+        const result = generateCode(account.secret);
+        setCode(result.code);
+        setRemaining(result.remaining);
+      } catch {
+        setCode('------');
+        setRemaining(0);
+      }
     };
     update();
     const interval = setInterval(update, 1000);
