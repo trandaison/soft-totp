@@ -7,7 +7,7 @@ import { InputPassword } from './InputPassword';
 interface Props {
   onAdd: (account: Account) => void;
   onCancel: () => void;
-  initialData?: { secret: string; issuer: string; name: string };
+  initialData?: { secret: string; issuer: string; name: string; logoUrl?: string };
 }
 
 export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
@@ -16,6 +16,7 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
   const [issuer, setIssuer] = useState(initialData?.issuer || '');
   const [urlPatternsText, setUrlPatternsText] = useState('');
   const [logoId, setLogoId] = useState<string | undefined>(undefined);
+  const [faviconUrl, setFaviconUrl] = useState<string | undefined>(initialData?.logoUrl);
 
   const parsePatterns = (text: string): string[] => {
     return text
@@ -36,6 +37,7 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
       secret: secret.replace(/\s/g, '').toUpperCase(),
       urlPatterns: patterns.length > 0 ? patterns : undefined,
       logoId,
+      logoUrl: !logoId && faviconUrl ? faviconUrl : undefined,
       createdAt: Date.now(),
       sortOrder: 0,
     };
@@ -50,6 +52,7 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
           logoId={logoId}
           issuer={issuer}
           urlPatterns={parsePatterns(urlPatternsText)}
+          faviconUrl={faviconUrl}
           onSelect={setLogoId}
           size={54}
         />

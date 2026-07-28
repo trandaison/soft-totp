@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Account } from '../lib/types';
 import { generateCode } from '../lib/totp';
-import { getLogoById, findLogoForAccount } from '../lib/logos';
+import { getLogoById, findLogoForAccount, issuerToDomain } from '../lib/logos';
 import { colors } from '../lib/colors';
 
 interface Props {
@@ -15,6 +15,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
   const [remaining, setRemaining] = useState(30);
   const [copied, setCopied] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [fetchedFavicon, setFetchedFavicon] = useState<string | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,6 +46,29 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
 
+  useEffect(() => {
+    if (!account.issuer || account.logoUrl || account.logoId) {
+      setFetchedFavicon(undefined);
+      return;
+    }
+    const domain = issuerToDomain(account.issuer);
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    let cancelled = false;
+    fetch(faviconUrl)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setFetchedFavicon(faviconUrl);
+        } else {
+          setFetchedFavicon(undefined);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedFavicon(undefined);
+      });
+    return () => { cancelled = true; };
+  }, [account.issuer, account.logoUrl, account.logoId]);
+
   const copyCode = async () => {
     try {
       await navigator.clipboard.writeText(code);
@@ -60,7 +84,9 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
 
   const selectedLogo = account.logoId ? getLogoById(account.logoId) : undefined;
   const autoLogo = findLogoForAccount(account.issuer, account.urlPatterns);
-  const displayLogo = selectedLogo || autoLogo;
+  const effectiveFavicon = fetchedFavicon || account.logoUrl;
+  const displayFavicon = !selectedLogo && effectiveFavicon;
+  const displayLogo = selectedLogo || (!effectiveFavicon ? autoLogo : undefined);
 
   const iconBtnStyle: React.CSSProperties = {
     background: 'none',
@@ -112,22 +138,31 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
             style={{ transition: 'stroke-dashoffset 1s linear' }}
           />
         </svg>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '24px',
-          height: '24px',
-        }}>
+        <div
+          title={account.issuer || account.name}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '24px',
+            height: '24px',
+          }}
+        >
           {displayLogo ? (
             <img
               src={displayLogo.file}
               alt={displayLogo.name}
               style={{ width: '24px', height: '24px', objectFit: 'contain' }}
             />
+          ) : displayFavicon ? (
+            <img
+              src={displayFavicon}
+              alt="Website favicon"
+              style={{ width: '24px', height: '24px', objectFit: 'contain' }}
+            />
           ) : (
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: colors.primary }}>
-              {account.name.charAt(0).toUpperCase()}
+              {account.issuer?.charAt(0)?.toUpperCase() || account.name.charAt(0).toUpperCase()}
             </span>
           )}
         </div>

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Account } from '../lib/types';
 import { LogoPicker } from '../popup/LogoPicker';
 import { InputPassword } from '../popup/InputPassword';
-import { getLogoById, findLogoForAccount } from '../lib/logos';
+import { getLogoById, findLogoForAccount, issuerToDomain } from '../lib/logos';
 import { colors } from '../lib/colors';
 
 interface Props {
@@ -21,6 +21,30 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
   const [mfaInputSelector, setMfaInputSelector] = useState(account.mfaInputSelector || '');
   const [logoId, setLogoId] = useState<string | undefined>(account.logoId);
   const [isEditing, setIsEditing] = useState(false);
+  const [fetchedFavicon, setFetchedFavicon] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!account.issuer || account.logoUrl || account.logoId) {
+      setFetchedFavicon(undefined);
+      return;
+    }
+    const domain = issuerToDomain(account.issuer);
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    let cancelled = false;
+    fetch(faviconUrl)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setFetchedFavicon(faviconUrl);
+        } else {
+          setFetchedFavicon(undefined);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedFavicon(undefined);
+      });
+    return () => { cancelled = true; };
+  }, [account.issuer, account.logoUrl, account.logoId]);
 
   const parsePatterns = (text: string): string[] => {
     return text
@@ -39,6 +63,7 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
       urlPatterns: patterns.length > 0 ? patterns : undefined,
       mfaInputSelector: mfaInputSelector || undefined,
       logoId,
+      logoUrl: account.logoUrl,
     });
     setIsEditing(false);
   };
@@ -193,25 +218,32 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
       border: `1px solid ${colors.borderLight}`,
     }}>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <div style={{
-          width: '44px',
-          height: '44px',
-          borderRadius: '12px',
-          background: colors.bg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          border: `1px solid ${colors.borderLight}`,
-        }}>
+        <div
+          title={account.issuer || account.name}
+          style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            background: colors.bg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            border: `1px solid ${colors.borderLight}`,
+          }}
+        >
           {(() => {
             const selectedLogo = account.logoId ? getLogoById(account.logoId) : undefined;
             const autoLogo = findLogoForAccount(account.issuer, account.urlPatterns);
-            const displayLogo = selectedLogo || autoLogo;
+            const effectiveFavicon = fetchedFavicon || account.logoUrl;
+            const displayFavicon = !selectedLogo && effectiveFavicon;
+            const displayLogo = selectedLogo || (!effectiveFavicon ? autoLogo : undefined);
             return displayLogo ? (
               <img src={displayLogo.file} alt={displayLogo.name} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            ) : displayFavicon ? (
+              <img src={displayFavicon} alt="Website favicon" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             ) : (
-              <span style={{ fontSize: '16px', fontWeight: 'bold', color: colors.primary }}>{account.name.charAt(0).toUpperCase()}</span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: colors.primary }}>{account.issuer?.charAt(0)?.toUpperCase() || account.name.charAt(0).toUpperCase()}</span>
             );
           })()}
         </div>

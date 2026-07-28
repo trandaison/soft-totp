@@ -14,10 +14,25 @@ export function App() {
     secret: string;
     issuer: string;
     name: string;
+    logoUrl?: string;
   } | null>(null);
 
   useEffect(() => {
     loadAccounts();
+
+    chrome.storage.local.get('pendingQRScan', (result) => {
+      if (result.pendingQRScan) {
+        chrome.storage.local.remove('pendingQRScan');
+        const payload = result.pendingQRScan as {
+          secret: string;
+          issuer: string;
+          name: string;
+          logoUrl?: string;
+        };
+        setScannedData(payload);
+        setShowForm('add');
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -27,6 +42,7 @@ export function App() {
           secret: string;
           issuer: string;
           name: string;
+          logoUrl?: string;
         };
         setScannedData(payload);
         setShowForm('add');
@@ -56,10 +72,8 @@ export function App() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this account?')) {
-      await deleteAccount(id);
-      await loadAccounts();
-    }
+    await deleteAccount(id);
+    await loadAccounts();
   };
 
   const handleEdit = (id: string) => {

@@ -39,6 +39,7 @@ export function EditAccountForm({ account, onSave, onCancel }: Props) {
       urlPatterns: patterns.length > 0 ? patterns : undefined,
       mfaInputSelector: mfaInputSelector || undefined,
       logoId,
+      logoUrl: account.logoUrl,
     });
   };
 

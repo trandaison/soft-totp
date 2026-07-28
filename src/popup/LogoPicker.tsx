@@ -1,24 +1,51 @@
 import { useState, useRef, useEffect } from 'react';
-import { LOGOS, getLogoById, findLogoForAccount } from '../lib/logos';
+import { LOGOS, getLogoById, findLogoForAccount, issuerToDomain } from '../lib/logos';
 
 interface LogoPickerProps {
   logoId?: string;
   issuer?: string;
   urlPatterns?: string[];
+  faviconUrl?: string;
   onSelect: (logoId: string | undefined) => void;
   size?: number;
 }
 
-export function LogoPicker({ logoId, issuer, urlPatterns, onSelect, size = 48 }: LogoPickerProps) {
+export function LogoPicker({ logoId, issuer, urlPatterns, faviconUrl, onSelect, size = 48 }: LogoPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
+  const [fetchedFavicon, setFetchedFavicon] = useState<string | undefined>(undefined);
 
   const selectedLogo = logoId ? getLogoById(logoId) : undefined;
   const autoLogo = findLogoForAccount(issuer || '', urlPatterns);
-  const displayLogo = selectedLogo || autoLogo;
+  const effectiveFavicon = fetchedFavicon || faviconUrl;
+  const displayFavicon = !selectedLogo && effectiveFavicon;
+  const displayLogo = selectedLogo || (!effectiveFavicon ? autoLogo : undefined);
 
   const iconSize = Math.round(size * 0.67);
+
+  useEffect(() => {
+    if (!issuer) {
+      setFetchedFavicon(undefined);
+      return;
+    }
+    const domain = issuerToDomain(issuer);
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    let cancelled = false;
+    fetch(faviconUrl)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setFetchedFavicon(faviconUrl);
+        } else {
+          setFetchedFavicon(undefined);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedFavicon(undefined);
+      });
+    return () => { cancelled = true; };
+  }, [issuer]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -63,8 +90,16 @@ export function LogoPicker({ logoId, issuer, urlPatterns, onSelect, size = 48 }:
             alt={displayLogo.name}
             style={{ width: iconSize, height: iconSize, objectFit: 'contain' }}
           />
+        ) : displayFavicon ? (
+          <img
+            src={displayFavicon}
+            alt="Website favicon"
+            style={{ width: iconSize, height: iconSize, objectFit: 'contain' }}
+          />
         ) : (
-          <span style={{ fontSize: Math.round(size * 0.25), color: '#999' }}>Logo</span>
+          <span style={{ fontSize: Math.round(size * 0.35), fontWeight: 'bold', color: '#999' }}>
+            {issuer?.charAt(0)?.toUpperCase() || 'L'}
+          </span>
         )}
       </div>
 

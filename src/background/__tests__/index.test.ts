@@ -9,6 +9,9 @@ const mockTabsSendMessage = vi.fn();
 const mockGetAccounts = vi.fn();
 const mockMatchURL = vi.fn();
 const mockGenerateCode = vi.fn();
+const mockStorageLocalSet = vi.fn();
+const mockOpenPopup = vi.fn();
+const mockFetch = vi.fn();
 
 vi.mock('../../lib/storage', () => ({
   getAccounts: mockGetAccounts,
@@ -23,7 +26,7 @@ vi.mock('../../lib/totp', () => ({
 }));
 
 const webNavigationListeners: Array<(details: { frameId: number; tabId: number }) => void> = [];
-const runtimeMessageListeners: Array<(message: { action: string; payload?: unknown }, sender: { tab?: { windowId?: number } }, sendResponse: (response: unknown) => void) => boolean | void> = [];
+const runtimeMessageListeners: Array<(message: { action: string; payload?: unknown }, sender: { tab?: { windowId?: number; url?: string } }, sendResponse: (response: unknown) => void) => boolean | void> = [];
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,13 +51,25 @@ beforeEach(() => {
     },
     runtime: {
       onMessage: {
-        addListener: vi.fn((listener: (message: { action: string; payload?: unknown }, sender: { tab?: { windowId?: number } }, sendResponse: (response: unknown) => void) => boolean | void) => {
+        addListener: vi.fn((listener: (message: { action: string; payload?: unknown }, sender: { tab?: { windowId?: number; url?: string } }, sendResponse: (response: unknown) => void) => boolean | void) => {
           runtimeMessageListeners.push(listener);
         }),
       },
       sendMessage: mockSendMessage,
     },
+    storage: {
+      local: {
+        set: mockStorageLocalSet.mockImplementation((data: unknown, callback?: () => void) => {
+          callback?.();
+        }),
+      },
+    },
+    action: {
+      openPopup: mockOpenPopup,
+    },
   } as unknown as typeof chrome);
+
+  vi.stubGlobal('fetch', mockFetch.mockRejectedValue(new Error('Network error')));
 
   vi.resetModules();
 });
@@ -195,17 +210,20 @@ describe('background script', () => {
       expect(sendResponse).toHaveBeenCalledWith({ dataUrl: null });
     });
 
-    it('should forward QR_SCANNED via runtime.sendMessage', async () => {
+    it('should store QR_SCANNED data and open popup', async () => {
       await import('../index');
       const listener = runtimeMessageListeners[0];
 
       const payload = { secret: 'JBSWY3DPEHPK3PXP', issuer: 'Test', name: 'test@example.com' };
       listener({ action: 'QR_SCANNED', payload }, { tab: undefined }, vi.fn());
 
-      expect(mockSendMessage).toHaveBeenCalledWith({
-        action: 'QR_SCANNED',
-        payload,
-      });
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(mockStorageLocalSet).toHaveBeenCalledWith(
+        expect.objectContaining({ pendingQRScan: expect.objectContaining({ secret: payload.secret }) }),
+        expect.any(Function)
+      );
+      expect(mockOpenPopup).toHaveBeenCalled();
     });
 
     it('should forward AUTOFILL_STATUS via runtime.sendMessage', async () => {

@@ -1,5 +1,5 @@
 import { createOverlay, showToast } from './overlay';
-import { decodeQR, parseQRContent } from '../lib/qr';
+import { decodeQRMultiscale, parseQRContent } from '../lib/qr';
 
 async function captureVisibleTab(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -55,7 +55,7 @@ export async function startQRCapture(): Promise<void> {
 
     const dataUrl = await captureVisibleTab();
     const imageData = await cropImage(dataUrl, rect);
-    const qrContent = decodeQR(imageData);
+    const qrContent = decodeQRMultiscale(imageData);
 
     if (!qrContent) {
       showToast('No QR code found in selection', true);

@@ -66,6 +66,24 @@ export function getLogoById(id: string): LogoEntry | undefined {
   return LOGOS.find((l) => l.id === id);
 }
 
+export function issuerToDomain(issuer: string): string {
+  const lower = issuer.toLowerCase().trim();
+  const domainMap: Record<string, string> = {
+    slack: 'slack.com',
+    github: 'github.com',
+    google: 'google.com',
+    gmail: 'gmail.com',
+    aws: 'aws.amazon.com',
+    facebook: 'facebook.com',
+    bitbucket: 'bitbucket.org',
+    npm: 'npmjs.com',
+    sendgrid: 'sendgrid.com',
+  };
+  if (domainMap[lower]) return domainMap[lower];
+  if (lower.includes('.')) return lower;
+  return `${lower}.com`;
+}
+
 export function findLogoForAccount(issuer: string, urlPatterns?: string[]): LogoEntry | undefined {
   const lowerIssuer = issuer.toLowerCase();
 

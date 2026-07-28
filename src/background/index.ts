@@ -2,6 +2,23 @@ import { matchURL } from '../lib/url-match';
 import { getAccounts } from '../lib/storage';
 import type { Message } from '../lib/types';
 
+async function fetchFaviconAsBase64(domain: string): Promise<string | undefined> {
+  try {
+    const url = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    const response = await fetch(url);
+    if (!response.ok) return undefined;
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(undefined);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 chrome.webNavigation.onCompleted.addListener(async (details) => {
   if (details.frameId !== 0) return;
 
@@ -44,9 +61,37 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.action === 'QR_SCANNED') {
-      chrome.runtime.sendMessage({
-        action: 'QR_SCANNED',
-        payload: message.payload,
+      const payload = message.payload as {
+        secret: string;
+        issuer: string;
+        name: string;
+        logoUrl?: string;
+      };
+      
+      const tab = sender.tab;
+      const domain = tab?.url ? new URL(tab.url).hostname : undefined;
+      
+      const issuerDomain = payload.issuer 
+        ? payload.issuer.toLowerCase().replace(/[^a-z0-9.-]/g, '') + '.com'
+        : undefined;
+      
+      const faviconPromise = issuerDomain
+        ? fetchFaviconAsBase64(issuerDomain).then((url) => 
+            url || (domain ? fetchFaviconAsBase64(domain) : undefined)
+          )
+        : domain 
+          ? fetchFaviconAsBase64(domain)
+          : Promise.resolve(undefined);
+      
+      faviconPromise.then((logoUrl) => {
+        const enrichedPayload = {
+          ...payload,
+          logoUrl: payload.logoUrl || logoUrl,
+        };
+        
+        chrome.storage.local.set({ pendingQRScan: enrichedPayload }, () => {
+          chrome.action.openPopup();
+        });
       });
     }
 

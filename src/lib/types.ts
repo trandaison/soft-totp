@@ -6,6 +6,7 @@ export interface Account {
   urlPatterns?: string[];
   mfaInputSelector?: string;
   logoId?: string;
+  logoUrl?: string;
   createdAt: number;
   sortOrder: number;
 }
@@ -19,6 +20,7 @@ export interface QRScanResult {
   secret: string;
   issuer: string;
   name: string;
+  logoUrl?: string;
 }
 
 export type AutofillState = 'LOADING' | 'SUCCESS' | 'ERROR' | 'MULTIPLE';
