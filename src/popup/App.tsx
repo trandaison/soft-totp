@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { AccountList } from './AccountList';
 import { AddAccountForm } from './AddAccountForm';
-import { getAccounts, saveAccount, deleteAccount } from '../lib/storage';
+import { EditAccountForm } from './EditAccountForm';
+import { getAccounts, saveAccount, deleteAccount, updateAccount } from '../lib/storage';
 import type { Account } from '../lib/types';
 
 export function App() {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState<'add' | 'edit' | null>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [scannedData, setScannedData] = useState<{
     secret: string;
     issuer: string;
@@ -26,7 +28,7 @@ export function App() {
           name: string;
         };
         setScannedData(payload);
-        setShowForm(true);
+        setShowForm('add');
       }
     };
     chrome.runtime.onMessage.addListener(listener);
@@ -41,17 +43,30 @@ export function App() {
   const handleAdd = async (account: Account) => {
     await saveAccount(account);
     await loadAccounts();
-    setShowForm(false);
+    setShowForm(null);
     setScannedData(null);
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteAccount(id);
+  const handleUpdate = async (account: Account) => {
+    await updateAccount(account);
     await loadAccounts();
+    setShowForm(null);
+    setEditingAccount(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this account?')) {
+      await deleteAccount(id);
+      await loadAccounts();
+    }
   };
 
   const handleEdit = (id: string) => {
-    chrome.runtime.openOptionsPage();
+    const account = accounts.find((a) => a.id === id);
+    if (account) {
+      setEditingAccount(account);
+      setShowForm('edit');
+    }
   };
 
   const handleScanQR = () => {
@@ -73,7 +88,7 @@ export function App() {
         {!showForm && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => setShowForm('add')}
               style={{
                 background: '#fff',
                 color: '#3498db',
@@ -104,14 +119,23 @@ export function App() {
         )}
       </div>
       <div style={{ padding: '12px' }}>
-        {showForm ? (
+        {showForm === 'add' ? (
           <AddAccountForm
             onAdd={handleAdd}
             onCancel={() => {
-              setShowForm(false);
+              setShowForm(null);
               setScannedData(null);
             }}
             initialData={scannedData || undefined}
+          />
+        ) : showForm === 'edit' && editingAccount ? (
+          <EditAccountForm
+            account={editingAccount}
+            onSave={handleUpdate}
+            onCancel={() => {
+              setShowForm(null);
+              setEditingAccount(null);
+            }}
           />
         ) : (
           <AccountList accounts={accounts} onDelete={handleDelete} onEdit={handleEdit} />

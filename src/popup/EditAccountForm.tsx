@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import type { Account } from '../lib/types';
-import { v4 as uuidv4 } from 'uuid';
 import { LogoPicker } from './LogoPicker';
 import { InputPassword } from './InputPassword';
 
 interface Props {
-  onAdd: (account: Account) => void;
+  account: Account;
+  onSave: (account: Account) => void;
   onCancel: () => void;
-  initialData?: { secret: string; issuer: string; name: string };
 }
 
-export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
-  const [name, setName] = useState(initialData?.name || '');
-  const [secret, setSecret] = useState(initialData?.secret || '');
-  const [issuer, setIssuer] = useState(initialData?.issuer || '');
-  const [urlPatternsText, setUrlPatternsText] = useState('');
-  const [logoId, setLogoId] = useState<string | undefined>(undefined);
+export function EditAccountForm({ account, onSave, onCancel }: Props) {
+  const [name, setName] = useState(account.name);
+  const [secret, setSecret] = useState(account.secret);
+  const [issuer, setIssuer] = useState(account.issuer);
+  const [urlPatternsText, setUrlPatternsText] = useState(
+    account.urlPatterns?.join('\n') || ''
+  );
+  const [mfaInputSelector, setMfaInputSelector] = useState(account.mfaInputSelector || '');
+  const [logoId, setLogoId] = useState<string | undefined>(account.logoId);
 
   const parsePatterns = (text: string): string[] => {
     return text
@@ -29,22 +31,20 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
     if (!name || !secret) return;
 
     const patterns = parsePatterns(urlPatternsText);
-    const account: Account = {
-      id: uuidv4(),
+    onSave({
+      ...account,
       name,
-      issuer,
       secret: secret.replace(/\s/g, '').toUpperCase(),
+      issuer,
       urlPatterns: patterns.length > 0 ? patterns : undefined,
+      mfaInputSelector: mfaInputSelector || undefined,
       logoId,
-      createdAt: Date.now(),
-      sortOrder: 0,
-    };
-    onAdd(account);
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ padding: '16px' }}>
-      <h3 style={{ margin: '0 0 16px' }}>Add Account</h3>
+    <form onSubmit={handleSubmit}>
+      <h3 style={{ margin: '0 0 16px' }}>Edit Account</h3>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
         <LogoPicker
           logoId={logoId}
@@ -102,7 +102,7 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
           }}
         />
       </div>
-      <div style={{ marginBottom: '16px' }}>
+      <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
           URL Patterns (for auto-fill)
         </label>
@@ -124,6 +124,24 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
         <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
           Matches if URL matches ANY of these patterns
         </div>
+      </div>
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+          MFA Input Selector
+        </label>
+        <input
+          type="text"
+          value={mfaInputSelector}
+          onChange={(e) => setMfaInputSelector(e.target.value)}
+          placeholder="CSS selector for MFA input"
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '6px',
+            border: '1px solid #ddd',
+            boxSizing: 'border-box',
+          }}
+        />
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
         <button type="submit" style={{

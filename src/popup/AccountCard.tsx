@@ -237,7 +237,12 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
                   </button>
                   <div style={{ height: '1px', background: '#eee' }} />
                   <button
-                    onClick={() => { onDelete(account.id); setShowMenu(false); }}
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to delete this account?')) {
+                        onDelete(account.id);
+                      }
+                      setShowMenu(false);
+                    }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
