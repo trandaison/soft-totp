@@ -3,7 +3,7 @@ export interface Account {
   name: string;
   issuer: string;
   secret: string;
-  urlPattern?: string;
+  urlPatterns?: string[];
   mfaInputSelector?: string;
   createdAt: number;
   sortOrder: number;

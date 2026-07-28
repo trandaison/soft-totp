@@ -59,7 +59,7 @@ const testAccount: Account = {
   name: 'Slack',
   issuer: 'Slack',
   secret: 'JBSWY3DPEHPK3PXP',
-  urlPattern: 'slack.com',
+  urlPatterns: ['slack.com'],
   createdAt: Date.now(),
   sortOrder: 0,
 };

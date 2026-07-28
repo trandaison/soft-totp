@@ -11,17 +11,27 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
   const [name, setName] = useState(account.name);
   const [secret, setSecret] = useState(account.secret);
   const [issuer, setIssuer] = useState(account.issuer);
-  const [urlPattern, setUrlPattern] = useState(account.urlPattern || '');
+  const [urlPatternsText, setUrlPatternsText] = useState(
+    account.urlPatterns?.join('\n') || ''
+  );
   const [mfaInputSelector, setMfaInputSelector] = useState(account.mfaInputSelector || '');
   const [isEditing, setIsEditing] = useState(false);
 
+  const parsePatterns = (text: string): string[] => {
+    return text
+      .split(/[\n,]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+  };
+
   const handleSave = () => {
+    const patterns = parsePatterns(urlPatternsText);
     onUpdate({
       ...account,
       name,
       secret: secret.replace(/\s/g, '').toUpperCase(),
       issuer,
-      urlPattern: urlPattern || undefined,
+      urlPatterns: patterns.length > 0 ? patterns : undefined,
       mfaInputSelector: mfaInputSelector || undefined,
     });
     setIsEditing(false);
@@ -64,14 +74,25 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
           />
         </div>
         <div style={{ marginBottom: '12px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>URL Pattern</label>
-          <input
-            type="text"
-            value={urlPattern}
-            onChange={(e) => setUrlPattern(e.target.value)}
-            placeholder="e.g., slack.com"
-            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>URL Patterns</label>
+          <textarea
+            value={urlPatternsText}
+            onChange={(e) => setUrlPatternsText(e.target.value)}
+            placeholder={"One pattern per line or comma-separated:\nslack.com\nslack.com/z-app-*"}
+            rows={3}
+            style={{
+              width: '100%',
+              padding: '8px',
+              borderRadius: '6px',
+              border: '1px solid #ddd',
+              boxSizing: 'border-box',
+              resize: 'vertical',
+              fontSize: '13px',
+            }}
           />
+          <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+            Matches if URL matches ANY of these patterns
+          </div>
         </div>
         <div style={{ marginBottom: '16px' }}>
           <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>MFA Input Selector</label>
@@ -91,6 +112,8 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
     );
   }
 
+  const displayPatterns = account.urlPatterns?.join(', ') || 'No URL patterns';
+
   return (
     <div style={{
       background: '#fff',
@@ -102,14 +125,14 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
       justifyContent: 'space-between',
       alignItems: 'center',
     }}>
-      <div>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '16px', fontWeight: 500 }}>{account.name}</div>
-        <div style={{ fontSize: '12px', color: '#999' }}>
+        <div style={{ fontSize: '12px', color: '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {account.issuer && `${account.issuer} • `}
-          {account.urlPattern || 'No URL pattern'}
+          {displayPatterns}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
         <button onClick={() => setIsEditing(true)} style={{ background: '#3498db', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Edit</button>
         <button onClick={() => onDelete(account.id)} style={{ background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Delete</button>
       </div>

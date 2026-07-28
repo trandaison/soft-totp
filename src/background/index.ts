@@ -10,7 +10,7 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
 
   const accounts = await getAccounts();
   const matchedAccounts = accounts.filter(
-    (a) => a.urlPattern && matchURL(a.urlPattern, tab.url!)
+    (a) => a.urlPatterns?.some((pattern) => matchURL(pattern, tab.url!))
   );
 
   if (matchedAccounts.length === 0) return;

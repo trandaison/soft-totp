@@ -92,8 +92,8 @@ describe('background script', () => {
 
     it('should send AUTOFILL with matched accounts', async () => {
       const accounts: Account[] = [
-        { id: '1', name: 'Test', issuer: 'Test', secret: 'JBSWY3DPEHPK3PXP', urlPattern: 'github.com', createdAt: 0, sortOrder: 0 },
-        { id: '2', name: 'Other', issuer: 'Other', secret: 'JBSWY3DPEHPK3PXP', urlPattern: 'gitlab.com', createdAt: 0, sortOrder: 1 },
+        { id: '1', name: 'Test', issuer: 'Test', secret: 'JBSWY3DPEHPK3PXP', urlPatterns: ['github.com'], createdAt: 0, sortOrder: 0 },
+        { id: '2', name: 'Other', issuer: 'Other', secret: 'JBSWY3DPEHPK3PXP', urlPatterns: ['gitlab.com'], createdAt: 0, sortOrder: 1 },
       ];
 
       mockTabsGet.mockResolvedValue({ url: 'https://github.com/login' });

@@ -12,18 +12,26 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
   const [name, setName] = useState(initialData?.name || '');
   const [secret, setSecret] = useState(initialData?.secret || '');
   const [issuer, setIssuer] = useState(initialData?.issuer || '');
-  const [urlPattern, setUrlPattern] = useState('');
+  const [urlPatternsText, setUrlPatternsText] = useState('');
+
+  const parsePatterns = (text: string): string[] => {
+    return text
+      .split(/[\n,]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !secret) return;
 
+    const patterns = parsePatterns(urlPatternsText);
     const account: Account = {
       id: uuidv4(),
       name,
       issuer,
       secret: secret.replace(/\s/g, '').toUpperCase(),
-      urlPattern: urlPattern || undefined,
+      urlPatterns: patterns.length > 0 ? patterns : undefined,
       createdAt: Date.now(),
       sortOrder: 0,
     };
@@ -92,21 +100,26 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
       </div>
       <div style={{ marginBottom: '16px' }}>
         <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-          URL Pattern (for auto-fill)
+          URL Patterns (for auto-fill)
         </label>
-        <input
-          type="text"
-          value={urlPattern}
-          onChange={(e) => setUrlPattern(e.target.value)}
-          placeholder="e.g., slack.com, github.com/login*"
+        <textarea
+          value={urlPatternsText}
+          onChange={(e) => setUrlPatternsText(e.target.value)}
+          placeholder={"One pattern per line or comma-separated:\nslack.com\nslack.com/z-app-*"}
+          rows={3}
           style={{
             width: '100%',
             padding: '8px',
             borderRadius: '6px',
             border: '1px solid #ddd',
             boxSizing: 'border-box',
+            resize: 'vertical',
+            fontSize: '13px',
           }}
         />
+        <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+          Matches if URL matches ANY of these patterns
+        </div>
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
         <button type="submit" style={{
