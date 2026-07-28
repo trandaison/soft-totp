@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Account } from '../lib/types';
 import { LogoPicker } from '../popup/LogoPicker';
+import { InputPassword } from '../popup/InputPassword';
 import { getLogoById, findLogoForAccount } from '../lib/logos';
 
 interface Props {
@@ -51,12 +52,14 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-          <LogoPicker
-            logoId={logoId}
-            issuer={issuer}
-            urlPatterns={parsePatterns(urlPatternsText)}
-            onSelect={setLogoId}
-          />
+          <div style={{ width: '54px', height: '54px', flexShrink: 0 }}>
+            <LogoPicker
+              logoId={logoId}
+              issuer={issuer}
+              urlPatterns={parsePatterns(urlPatternsText)}
+              onSelect={setLogoId}
+            />
+          </div>
           <div style={{ flex: 1 }}>
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Name</label>
             <input
@@ -69,11 +72,9 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
         </div>
         <div style={{ marginBottom: '12px' }}>
           <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Secret</label>
-          <input
-            type="text"
+          <InputPassword
             value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box', fontFamily: 'monospace' }}
+            onChange={setSecret}
           />
         </div>
         <div style={{ marginBottom: '12px' }}>

@@ -6,9 +6,10 @@ interface LogoPickerProps {
   issuer?: string;
   urlPatterns?: string[];
   onSelect: (logoId: string | undefined) => void;
+  size?: number;
 }
 
-export function LogoPicker({ logoId, issuer, urlPatterns, onSelect }: LogoPickerProps) {
+export function LogoPicker({ logoId, issuer, urlPatterns, onSelect, size = 48 }: LogoPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -16,6 +17,8 @@ export function LogoPicker({ logoId, issuer, urlPatterns, onSelect }: LogoPicker
   const selectedLogo = logoId ? getLogoById(logoId) : undefined;
   const autoLogo = findLogoForAccount(issuer || '', urlPatterns);
   const displayLogo = selectedLogo || autoLogo;
+
+  const iconSize = Math.round(size * 0.67);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -35,14 +38,14 @@ export function LogoPicker({ logoId, issuer, urlPatterns, onSelect }: LogoPicker
   }, [isOpen]);
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative', display: 'inline-block', width: size, height: size }}>
       <div
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '12px',
+          width: size,
+          height: size,
+          borderRadius: Math.round(size * 0.25),
           border: '2px dashed #ddd',
           display: 'flex',
           alignItems: 'center',
@@ -58,10 +61,10 @@ export function LogoPicker({ logoId, issuer, urlPatterns, onSelect }: LogoPicker
           <img
             src={displayLogo.file}
             alt={displayLogo.name}
-            style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+            style={{ width: iconSize, height: iconSize, objectFit: 'contain' }}
           />
         ) : (
-          <span style={{ fontSize: '10px', color: '#999' }}>Logo</span>
+          <span style={{ fontSize: Math.round(size * 0.25), color: '#999' }}>Logo</span>
         )}
       </div>
 

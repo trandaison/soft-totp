@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Account } from '../lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { LogoPicker } from './LogoPicker';
+import { InputPassword } from './InputPassword';
 
 interface Props {
   onAdd: (account: Account) => void;
@@ -75,20 +76,11 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
         <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
           Secret Key *
         </label>
-        <input
-          type="text"
+        <InputPassword
           value={secret}
-          onChange={(e) => setSecret(e.target.value)}
+          onChange={setSecret}
           placeholder="Base32 secret key"
           required
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: '6px',
-            border: '1px solid #ddd',
-            boxSizing: 'border-box',
-            fontFamily: 'monospace',
-          }}
         />
       </div>
       <div style={{ marginBottom: '12px' }}>
