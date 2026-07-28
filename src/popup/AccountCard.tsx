@@ -54,7 +54,7 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
     }
   };
 
-  const circumference = 2 * Math.PI * 14;
+  const circumference = 2 * Math.PI * 18;
   const dashoffset = circumference * (remaining / 30);
 
   const selectedLogo = account.logoId ? getLogoById(account.logoId) : undefined;
@@ -85,41 +85,46 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
       marginBottom: '8px',
       boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
     }}>
-      <div style={{ position: 'relative', marginRight: '12px', flexShrink: 0 }}>
-        <svg width="32" height="32" viewBox="0 0 32 32">
-          <circle cx="16" cy="16" r="14" fill="none" stroke="#eee" strokeWidth="2" />
+      <div style={{
+        position: 'relative',
+        width: '40px',
+        height: '40px',
+        marginRight: '12px',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <svg width="40" height="40" viewBox="0 0 40 40" style={{ position: 'absolute', top: 0, left: 0 }}>
+          <circle cx="20" cy="20" r="18" fill="none" stroke="#eee" strokeWidth="2" />
           <circle
-            cx="16"
-            cy="16"
-            r="14"
+            cx="20"
+            cy="20"
+            r="18"
             fill="none"
             stroke={remaining < 5 ? '#e74c3c' : '#2ecc71'}
             strokeWidth="2"
             strokeDasharray={circumference}
             strokeDashoffset={dashoffset}
-            transform="rotate(-90 16 16)"
+            transform="rotate(-90 20 20)"
             style={{ transition: 'stroke-dashoffset 1s linear' }}
           />
         </svg>
         <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '20px',
-          height: '20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          width: '24px',
+          height: '24px',
         }}>
           {displayLogo ? (
             <img
               src={displayLogo.file}
               alt={displayLogo.name}
-              style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+              style={{ width: '24px', height: '24px', objectFit: 'contain' }}
             />
           ) : (
-            <span style={{ fontSize: '10px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
               {account.name.charAt(0).toUpperCase()}
             </span>
           )}
