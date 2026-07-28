@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Account } from '../lib/types';
 import { v4 as uuidv4 } from 'uuid';
+import { LogoPicker } from './LogoPicker';
 
 interface Props {
   onAdd: (account: Account) => void;
@@ -13,6 +14,7 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
   const [secret, setSecret] = useState(initialData?.secret || '');
   const [issuer, setIssuer] = useState(initialData?.issuer || '');
   const [urlPatternsText, setUrlPatternsText] = useState('');
+  const [logoId, setLogoId] = useState<string | undefined>(undefined);
 
   const parsePatterns = (text: string): string[] => {
     return text
@@ -32,6 +34,7 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
       issuer,
       secret: secret.replace(/\s/g, '').toUpperCase(),
       urlPatterns: patterns.length > 0 ? patterns : undefined,
+      logoId,
       createdAt: Date.now(),
       sortOrder: 0,
     };
@@ -41,24 +44,32 @@ export function AddAccountForm({ onAdd, onCancel, initialData }: Props) {
   return (
     <form onSubmit={handleSubmit} style={{ padding: '16px' }}>
       <h3 style={{ margin: '0 0 16px' }}>Add Account</h3>
-      <div style={{ marginBottom: '12px' }}>
-        <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-          Account Name *
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g., Slack, GitHub"
-          required
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: '6px',
-            border: '1px solid #ddd',
-            boxSizing: 'border-box',
-          }}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+        <LogoPicker
+          logoId={logoId}
+          issuer={issuer}
+          urlPatterns={parsePatterns(urlPatternsText)}
+          onSelect={setLogoId}
         />
+        <div style={{ flex: 1 }}>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+            Account Name *
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Slack, GitHub"
+            required
+            style={{
+              width: '100%',
+              padding: '8px',
+              borderRadius: '6px',
+              border: '1px solid #ddd',
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
       </div>
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>

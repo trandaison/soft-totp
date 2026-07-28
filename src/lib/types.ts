@@ -5,6 +5,7 @@ export interface Account {
   secret: string;
   urlPatterns?: string[];
   mfaInputSelector?: string;
+  logoId?: string;
   createdAt: number;
   sortOrder: number;
 }

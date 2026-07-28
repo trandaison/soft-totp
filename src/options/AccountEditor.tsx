@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { Account } from '../lib/types';
+import { LogoPicker } from '../popup/LogoPicker';
+import { getLogoById, findLogoForAccount } from '../lib/logos';
 
 interface Props {
   account: Account;
@@ -15,6 +17,7 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
     account.urlPatterns?.join('\n') || ''
   );
   const [mfaInputSelector, setMfaInputSelector] = useState(account.mfaInputSelector || '');
+  const [logoId, setLogoId] = useState<string | undefined>(account.logoId);
   const [isEditing, setIsEditing] = useState(false);
 
   const parsePatterns = (text: string): string[] => {
@@ -33,6 +36,7 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
       issuer,
       urlPatterns: patterns.length > 0 ? patterns : undefined,
       mfaInputSelector: mfaInputSelector || undefined,
+      logoId,
     });
     setIsEditing(false);
   };
@@ -46,14 +50,22 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
         marginBottom: '12px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
       }}>
-        <div style={{ marginBottom: '12px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+          <LogoPicker
+            logoId={logoId}
+            issuer={issuer}
+            urlPatterns={parsePatterns(urlPatternsText)}
+            onSelect={setLogoId}
           />
+          <div style={{ flex: 1 }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+            />
+          </div>
         </div>
         <div style={{ marginBottom: '12px' }}>
           <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Secret</label>
@@ -125,11 +137,35 @@ export function AccountEditor({ account, onUpdate, onDelete }: Props) {
       justifyContent: 'space-between',
       alignItems: 'center',
     }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '16px', fontWeight: 500 }}>{account.name}</div>
-        <div style={{ fontSize: '12px', color: '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {account.issuer && `${account.issuer} • `}
-          {displayPatterns}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '10px',
+          background: '#f5f5f5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          border: '1px solid #eee',
+        }}>
+          {(() => {
+            const selectedLogo = account.logoId ? getLogoById(account.logoId) : undefined;
+            const autoLogo = findLogoForAccount(account.issuer, account.urlPatterns);
+            const displayLogo = selectedLogo || autoLogo;
+            return displayLogo ? (
+              <img src={displayLogo.file} alt={displayLogo.name} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+            ) : (
+              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#999' }}>{account.name.charAt(0).toUpperCase()}</span>
+            );
+          })()}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '16px', fontWeight: 500 }}>{account.name}</div>
+          <div style={{ fontSize: '12px', color: '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {account.issuer && `${account.issuer} • `}
+            {displayPatterns}
+          </div>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Account } from '../lib/types';
 import { generateCode } from '../lib/totp';
+import { getLogoById, findLogoForAccount } from '../lib/logos';
 
 interface Props {
   account: Account;
@@ -56,6 +57,10 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
   const circumference = 2 * Math.PI * 14;
   const dashoffset = circumference * (remaining / 30);
 
+  const selectedLogo = account.logoId ? getLogoById(account.logoId) : undefined;
+  const autoLogo = findLogoForAccount(account.issuer, account.urlPatterns);
+  const displayLogo = selectedLogo || autoLogo;
+
   const iconBtnStyle: React.CSSProperties = {
     background: 'none',
     border: 'none',
@@ -101,10 +106,23 @@ export function AccountCard({ account, onDelete, onEdit }: Props) {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          fontSize: '10px',
-          fontWeight: 'bold',
+          width: '20px',
+          height: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}>
-          {account.name.charAt(0).toUpperCase()}
+          {displayLogo ? (
+            <img
+              src={displayLogo.file}
+              alt={displayLogo.name}
+              style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+            />
+          ) : (
+            <span style={{ fontSize: '10px', fontWeight: 'bold' }}>
+              {account.name.charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
