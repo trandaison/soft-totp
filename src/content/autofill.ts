@@ -204,10 +204,16 @@ function closeDropupMenu(): void {
   }
 }
 
-function findMFAInput(account: Account): HTMLInputElement | null {
+function findMFAInput(account: Account): HTMLInputElement | HTMLInputElement[] | null {
   if (account.mfaInputSelector) {
-    const el = document.querySelector(account.mfaInputSelector);
-    if (el instanceof HTMLInputElement) return el;
+    const els = document.querySelectorAll(account.mfaInputSelector);
+    if (els.length === 0) return null;
+    if (els.length === 1) {
+      const el = els[0];
+      return el instanceof HTMLInputElement ? el : null;
+    }
+    const inputs = Array.from(els).filter((el): el is HTMLInputElement => el instanceof HTMLInputElement);
+    return inputs.length > 0 ? inputs : null;
   }
 
   const selectors = [
@@ -229,16 +235,32 @@ function findMFAInput(account: Account): HTMLInputElement | null {
 }
 
 function fillCode(account: Account, code: string): void {
-  const input = findMFAInput(account);
-  if (!input) {
+  const inputOrInputs = findMFAInput(account);
+  if (!inputOrInputs) {
     updateIconState('ERROR', 'MFA input field not found');
     return;
   }
 
-  input.value = code;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
-  input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+  if (Array.isArray(inputOrInputs)) {
+    const inputs = inputOrInputs;
+    const digits = code.split('');
+    inputs.forEach((input, i) => {
+      if (i < digits.length) {
+        input.value = digits[i];
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+    if (inputs.length > 0) {
+      inputs[inputs.length - 1].dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+    }
+  } else {
+    const input = inputOrInputs;
+    input.value = code;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+  }
 
   updateIconState('SUCCESS', `Code filled for ${account.name}`);
 }
