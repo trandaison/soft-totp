@@ -179,6 +179,22 @@ describe('background script', () => {
       expect(sendResponse).toHaveBeenCalledWith({ dataUrl: 'data:image/png;base64,abc123' });
     });
 
+    it('should handle CAPTURE_TAB when sender.tab is undefined', async () => {
+      await import('../index');
+      const listener = runtimeMessageListeners[0];
+
+      const sendResponse = vi.fn();
+      const result = listener(
+        { action: 'CAPTURE_TAB' },
+        { tab: undefined },
+        sendResponse
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockCaptureVisibleTab).not.toHaveBeenCalled();
+      expect(sendResponse).toHaveBeenCalledWith({ dataUrl: null });
+    });
+
     it('should forward QR_SCANNED via runtime.sendMessage', async () => {
       await import('../index');
       const listener = runtimeMessageListeners[0];

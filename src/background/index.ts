@@ -32,7 +32,12 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.action === 'CAPTURE_TAB') {
-      chrome.tabs.captureVisibleTab(sender.tab!.windowId!, { format: 'png' }, (dataUrl) => {
+      const windowId = sender.tab?.windowId;
+      if (windowId == null) {
+        sendResponse({ dataUrl: null });
+        return;
+      }
+      chrome.tabs.captureVisibleTab(windowId, { format: 'png' }, (dataUrl) => {
         sendResponse({ dataUrl });
       });
       return true;
