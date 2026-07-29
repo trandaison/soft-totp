@@ -128,6 +128,10 @@ export function showPinPopup(
       background: rgba(255, 255, 255, 0.9);
     }
 
+    .pin-input.error {
+      border-color: #DC3545;
+    }
+
     .pin-input::placeholder {
       color: rgba(0, 0, 0, 0.2);
     }
@@ -155,33 +159,7 @@ export function showPinPopup(
     }
 
     .submit-btn {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background: #1C274C;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .submit-btn:hover {
-      background: #2E86AB;
-    }
-
-    .submit-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .error-msg {
-      color: #DC3545;
-      font-size: 13px;
-      text-align: center;
-      margin-top: 12px;
-      min-height: 20px;
+      display: none;
     }
 
     .close-btn {
@@ -241,10 +219,14 @@ export function showPinPopup(
     input.addEventListener('input', (e) => {
       const target = e.target as HTMLInputElement;
       target.value = target.value.replace(/[^0-9]/g, '');
+      target.classList.remove('error');
       if (target.value && i < 5) {
         pinInputs[i + 1].focus();
       }
-      updateSubmitState();
+      // Auto-submit when all 6 digits filled
+      if (pinInputs.every((inp) => inp.value.length === 1)) {
+        submitBtn.click();
+      }
     });
 
     input.addEventListener('keydown', (e) => {
@@ -263,12 +245,16 @@ export function showPinPopup(
       digits.split('').forEach((digit, idx) => {
         if (pinInputs[idx]) {
           pinInputs[idx].value = digit;
+          pinInputs[idx].classList.remove('error');
         }
       });
       if (digits.length > 0) {
         pinInputs[Math.min(digits.length, 5)].focus();
       }
-      updateSubmitState();
+      // Auto-submit when all 6 digits filled
+      if (pinInputs.every((inp) => inp.value.length === 1)) {
+        submitBtn.click();
+      }
     });
 
     pinInputs.push(input);
@@ -298,23 +284,14 @@ export function showPinPopup(
   const submitBtn = document.createElement('button');
   submitBtn.className = 'submit-btn';
   submitBtn.textContent = 'Xác nhận';
-  submitBtn.disabled = true;
-
-  function updateSubmitState() {
-    const allFilled = pinInputs.every((input) => input.value.length === 1);
-    submitBtn.disabled = !allFilled;
-  }
+  submitBtn.style.display = 'none';
 
   const errorMsg = document.createElement('div');
-  errorMsg.className = 'error-msg';
+  errorMsg.style.display = 'none';
 
   submitBtn.addEventListener('click', async () => {
     const pin = pinInputs.map((input) => input.value).join('');
     if (pin.length !== 6) return;
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Đang xác thực...';
-    errorMsg.textContent = '';
 
     try {
       const response = await chrome.runtime.sendMessage({
@@ -326,20 +303,32 @@ export function showPinPopup(
         host.remove();
         onVerified(selectedAccount);
       } else {
+        // Show error via red borders + shake
+        pinInputs.forEach((input) => input.classList.add('error'));
         popup.classList.add('error');
-        setTimeout(() => popup.classList.remove('error'), 400);
-        errorMsg.textContent = '❌ Sai mã PIN, thử lại';
-        pinInputs.forEach((input) => {
-          input.value = '';
-        });
-        pinInputs[0].focus();
+        setTimeout(() => {
+          popup.classList.remove('error');
+        }, 400);
+        // Clear inputs after shake
+        setTimeout(() => {
+          pinInputs.forEach((input) => {
+            input.value = '';
+            input.classList.remove('error');
+          });
+          pinInputs[0].focus();
+        }, 500);
       }
     } catch (err) {
-      errorMsg.textContent = '❌ Lỗi xác thực, thử lại';
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Xác nhận';
-      updateSubmitState();
+      pinInputs.forEach((input) => input.classList.add('error'));
+      popup.classList.add('error');
+      setTimeout(() => {
+        popup.classList.remove('error');
+        pinInputs.forEach((input) => {
+          input.value = '';
+          input.classList.remove('error');
+        });
+        pinInputs[0].focus();
+      }, 500);
     }
   });
 
@@ -350,7 +339,6 @@ export function showPinPopup(
     popup.appendChild(accountSelect);
   }
   popup.appendChild(submitBtn);
-  popup.appendChild(errorMsg);
 
   shadow.appendChild(backdrop);
   shadow.appendChild(popup);
