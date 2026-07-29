@@ -121,7 +121,7 @@ chrome.runtime.onMessage.addListener(
             sendResponse({ success: false });
             return;
           }
-          await saveUnlockState({ unlockedUntil: Infinity });
+           await saveUnlockState({ unlockedUntil: Date.now() + 900000 });
           sendResponse({ success: true });
         } catch (error) {
           sendResponse({ success: false, error: (error as Error).message });
