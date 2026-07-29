@@ -13,6 +13,8 @@ const mockGenerateCode = vi.fn();
 const mockStorageLocalSet = vi.fn();
 const mockOpenPopup = vi.fn();
 const mockFetch = vi.fn();
+const mockFetchAutofillRules = vi.fn().mockResolvedValue(undefined);
+const mockGetMfaSelector = vi.fn().mockReturnValue(null);
 
 vi.mock('../../lib/storage', () => ({
   getAccounts: mockGetAccounts,
@@ -25,6 +27,11 @@ vi.mock('../../lib/url-match', () => ({
 
 vi.mock('../../lib/totp', () => ({
   generateCode: mockGenerateCode,
+}));
+
+vi.mock('../../lib/autofill-rules', () => ({
+  fetchAutofillRules: mockFetchAutofillRules,
+  getMfaSelector: mockGetMfaSelector,
 }));
 
 const webNavigationListeners: Array<(details: { frameId: number; tabId: number }) => void> = [];
@@ -87,6 +94,11 @@ describe('background script', () => {
     expect(chrome.runtime.onMessage.addListener).toHaveBeenCalledOnce();
   });
 
+  it('should call fetchAutofillRules on startup', async () => {
+    await import('../index');
+    expect(mockFetchAutofillRules).toHaveBeenCalledOnce();
+  });
+
   describe('URL matching on navigation', () => {
     it('should skip non-main frames', async () => {
       await import('../index');
@@ -126,6 +138,56 @@ describe('background script', () => {
       expect(mockTabsSendMessage).toHaveBeenCalledWith(1, {
         action: 'AUTOFILL',
         payload: { accounts: [accounts[0]], pinSetup: false },
+      });
+    });
+
+    it('should apply predefined selector when account has no custom mfaInputSelector', async () => {
+      const accounts: Account[] = [
+        { id: '1', name: 'Test', issuer: 'Test', secret: 'JBSWY3DPEHPK3PXP', urlPatterns: ['github.com'], createdAt: 0, sortOrder: 0 },
+      ];
+
+      mockTabsGet.mockResolvedValue({ url: 'https://github.com/sessions/two-factor' });
+      mockGetAccounts.mockResolvedValue(accounts);
+      mockMatchURL.mockImplementation((pattern: string, url: string) => pattern === 'github.com');
+      mockGetMfaSelector.mockReturnValue("input[name='otp']");
+      mockGetPinConfig.mockResolvedValue(null);
+
+      await import('../index');
+      const listener = webNavigationListeners[0];
+
+      await listener({ frameId: 0, tabId: 1 });
+
+      expect(mockTabsSendMessage).toHaveBeenCalledWith(1, {
+        action: 'AUTOFILL',
+        payload: {
+          accounts: [{ ...accounts[0], mfaInputSelector: "input[name='otp']" }],
+          pinSetup: false,
+        },
+      });
+    });
+
+    it('should prefer user custom mfaInputSelector over predefined', async () => {
+      const accounts: Account[] = [
+        { id: '1', name: 'Test', issuer: 'Test', secret: 'JBSWY3DPEHPK3PXP', urlPatterns: ['github.com'], createdAt: 0, sortOrder: 0, mfaInputSelector: '#custom-input' },
+      ];
+
+      mockTabsGet.mockResolvedValue({ url: 'https://github.com/sessions/two-factor' });
+      mockGetAccounts.mockResolvedValue(accounts);
+      mockMatchURL.mockImplementation((pattern: string, url: string) => pattern === 'github.com');
+      mockGetMfaSelector.mockReturnValue("input[name='otp']");
+      mockGetPinConfig.mockResolvedValue(null);
+
+      await import('../index');
+      const listener = webNavigationListeners[0];
+
+      await listener({ frameId: 0, tabId: 1 });
+
+      expect(mockTabsSendMessage).toHaveBeenCalledWith(1, {
+        action: 'AUTOFILL',
+        payload: {
+          accounts: [accounts[0]],
+          pinSetup: false,
+        },
       });
     });
 

@@ -2,7 +2,10 @@ import { matchURL } from '../lib/url-match';
 import { getAccounts, getPinConfig, savePinConfig, deletePinConfig } from '../lib/storage';
 import { derivePinHash, verifyPin, generateSalt } from '../lib/pin';
 import { verifyAssertion } from '../lib/webauthn';
+import { fetchAutofillRules, getMfaSelector } from '../lib/autofill-rules';
 import type { Message, PinConfig } from '../lib/types';
+
+fetchAutofillRules();
 
 async function fetchFaviconAsBase64(domain: string): Promise<string | undefined> {
   try {
@@ -28,9 +31,17 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
   if (!tab.url) return;
 
   const accounts = await getAccounts();
-  const matchedAccounts = accounts.filter(
-    (a) => a.urlPatterns?.some((pattern) => matchURL(pattern, tab.url!))
-  );
+  const matchedAccounts = accounts
+    .filter((a) => a.urlPatterns?.some((pattern) => matchURL(pattern, tab.url!)))
+    .map((account) => {
+      // User custom takes priority; fall back to predefined
+      if (account.mfaInputSelector) return account;
+      const predefinedSelector = getMfaSelector(tab.url!);
+      if (predefinedSelector) {
+        return { ...account, mfaInputSelector: predefinedSelector };
+      }
+      return account;
+    });
 
   if (matchedAccounts.length === 0) return;
 

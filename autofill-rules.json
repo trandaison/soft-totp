@@ -5,6 +5,15 @@
     },
     "accounts.google.com/signin/challenge/*": {
       "mfaInputSelector": "input[id='totpPin']"
+    },
+    "nalsdn.slack.com": {
+      "mfaInputSelector": ".two_factor_input_item input"
+    },
+    "nalsdn.slack.com/z-app-*": {
+      "mfaInputSelector": ".two_factor_input_item input"
+    },
+    "apps.nulab.com/signin/mfa": {
+      "mfaInputSelector": "#authCode"
     }
   }
 }
