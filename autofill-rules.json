@@ -1,0 +1,10 @@
+{
+  "autofillRules": {
+    "github.com/sessions/two-factor": {
+      "mfaInputSelector": "input[name='otp']"
+    },
+    "accounts.google.com/signin/challenge/*": {
+      "mfaInputSelector": "input[id='totpPin']"
+    }
+  }
+}
