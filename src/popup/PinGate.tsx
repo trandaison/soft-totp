@@ -116,7 +116,7 @@ export function PinGate({ onUnlocked }: Props) {
           <input
             key={i}
             ref={(el) => { inputRefs.current[i] = el; }}
-            type="text"
+            type="password"
             inputMode="numeric"
             maxLength={1}
             value={digit}
