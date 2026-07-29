@@ -41,7 +41,7 @@ export function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = '2fa-accounts.json';
+    a.download = 'soft-totp-accounts.json';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -87,7 +87,7 @@ export function App() {
           fontSize: '24px',
           fontWeight: 600,
         }}>
-          2FA Manager
+          Soft TOTP
         </h1>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button

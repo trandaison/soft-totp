@@ -99,7 +99,7 @@ export function App() {
         justifyContent: 'space-between',
         alignItems: 'center',
       }}>
-        <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>2FA Manager</h1>
+        <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Soft TOTP</h1>
         {!showForm && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button

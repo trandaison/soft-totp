@@ -1,10 +1,10 @@
-# 2FA Manager - Chrome Extension
+# Soft TOTP - Chrome Extension
 
-Chrome Extension quản lý mã MFA/2FA (TOTP) với tính năng quét QR code, auto-fill, và quản lý accounts.
+Chrome Extension quản lý mã TOTP với tính năng quét QR code, auto-fill, và quản lý accounts.
 
 ## Features
 
-- Quản lý mã TOTP 2FA (6 digits, 30s period)
+- Quản lý mã TOTP (6 digits, 30s period)
 - Quét QR code bằng drag-select vùng màn hình
 - Auto-fill mã MFA khi detect URL match
 - Floating status indicator (loading/success/error/multiple)
@@ -26,7 +26,7 @@ Chrome Extension quản lý mã MFA/2FA (TOTP) với tính năng quét QR code, 
 ## Project Structure
 
 ```
-2fa-ext/
+soft-totp/
 ├── src/
 │   ├── popup/              # React popup UI
 │   ├── options/            # React options page
