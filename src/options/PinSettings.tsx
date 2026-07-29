@@ -15,6 +15,7 @@ export function PinSettings({ onPinStatusChange }: PinSettingsProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+  const [credentialId, setCredentialId] = useState<string | null>(null);
 
   useEffect(() => {
     checkPinStatus();
@@ -24,6 +25,7 @@ export function PinSettings({ onPinStatusChange }: PinSettingsProps) {
     const response = await chrome.runtime.sendMessage({ action: 'GET_PIN_CONFIG' });
     const setup = response?.config?.isSetup ?? false;
     setIsSetup(setup);
+    setCredentialId(response?.config?.webAuthnCredential?.credentialId ?? null);
     onPinStatusChange?.(setup);
   };
 
@@ -89,7 +91,7 @@ export function PinSettings({ onPinStatusChange }: PinSettingsProps) {
     setError('');
 
     try {
-      const assertion = await authenticateCredential('');
+      const assertion = await authenticateCredential(credentialId!);
       const response = await chrome.runtime.sendMessage({
         action: 'RESET_PIN',
         payload: { oldPin, newPin: pin, assertion },
@@ -118,7 +120,7 @@ export function PinSettings({ onPinStatusChange }: PinSettingsProps) {
     setError('');
 
     try {
-      const assertion = await authenticateCredential('');
+      const assertion = await authenticateCredential(credentialId!);
       const response = await chrome.runtime.sendMessage({
         action: 'REMOVE_PIN',
         payload: { pin, assertion },
