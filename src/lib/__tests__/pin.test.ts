@@ -12,7 +12,7 @@ describe('pin.ts', () => {
     it('should generate different salts on each call', () => {
       const salt1 = generateSalt();
       const salt2 = generateSalt();
-      expect(Buffer.from(salt1)).not.toEqual(Buffer.from(salt2));
+      expect([...salt1]).not.toEqual([...salt2]);
     });
   });
 

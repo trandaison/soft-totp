@@ -7,6 +7,7 @@ const mockTabsQuery = vi.fn();
 const mockCaptureVisibleTab = vi.fn();
 const mockTabsSendMessage = vi.fn();
 const mockGetAccounts = vi.fn();
+const mockGetPinConfig = vi.fn();
 const mockMatchURL = vi.fn();
 const mockGenerateCode = vi.fn();
 const mockStorageLocalSet = vi.fn();
@@ -15,6 +16,7 @@ const mockFetch = vi.fn();
 
 vi.mock('../../lib/storage', () => ({
   getAccounts: mockGetAccounts,
+  getPinConfig: mockGetPinConfig,
 }));
 
 vi.mock('../../lib/url-match', () => ({
@@ -114,6 +116,7 @@ describe('background script', () => {
       mockTabsGet.mockResolvedValue({ url: 'https://github.com/login' });
       mockGetAccounts.mockResolvedValue(accounts);
       mockMatchURL.mockImplementation((pattern: string, url: string) => pattern === 'github.com');
+      mockGetPinConfig.mockResolvedValue(null);
 
       await import('../index');
       const listener = webNavigationListeners[0];
@@ -122,7 +125,7 @@ describe('background script', () => {
 
       expect(mockTabsSendMessage).toHaveBeenCalledWith(1, {
         action: 'AUTOFILL',
-        payload: { accounts: [accounts[0]] },
+        payload: { accounts: [accounts[0]], pinSetup: false },
       });
     });
 
