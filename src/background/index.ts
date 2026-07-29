@@ -37,10 +37,14 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
   const pinConfig = await getPinConfig();
   const pinSetup = pinConfig?.isSetup ?? false;
 
-  chrome.tabs.sendMessage(details.tabId, {
-    action: 'AUTOFILL',
-    payload: { accounts: matchedAccounts, pinSetup },
-  });
+  try {
+    await chrome.tabs.sendMessage(details.tabId, {
+      action: 'AUTOFILL',
+      payload: { accounts: matchedAccounts, pinSetup },
+    });
+  } catch {
+    // Content script not ready yet, ignore
+  }
 });
 
 chrome.runtime.onMessage.addListener(
@@ -197,7 +201,9 @@ chrome.runtime.onMessage.addListener(
     if (message.action === 'SCAN_QR') {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]?.id) {
-          chrome.tabs.sendMessage(tabs[0].id, { action: 'SCAN_QR' });
+          chrome.tabs.sendMessage(tabs[0].id, { action: 'SCAN_QR' }).catch(() => {
+            // Content script not ready, ignore
+          });
         }
       });
     }
@@ -253,6 +259,8 @@ chrome.runtime.onMessage.addListener(
       chrome.runtime.sendMessage({
         action: 'AUTOFILL_STATUS',
         payload: message.payload,
+      }).catch(() => {
+        // No listener for AUTOFILL_STATUS, ignore
       });
     }
   }
