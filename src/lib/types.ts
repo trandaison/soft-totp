@@ -86,3 +86,7 @@ export interface VerifyPinMessage extends Message {
   action: 'VERIFY_PIN';
   payload: { pin: string };
 }
+
+export interface UnlockState {
+  unlockedUntil: number; // timestamp ms, 0 = locked
+}

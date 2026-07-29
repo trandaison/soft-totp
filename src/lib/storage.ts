@@ -1,4 +1,4 @@
-import type { Account, PinConfig } from './types';
+import type { Account, PinConfig, UnlockState } from './types';
 
 const STORAGE_KEY = 'accounts';
 const PIN_CONFIG_KEY = 'pinConfig';
@@ -62,4 +62,15 @@ export async function savePinConfig(config: PinConfig): Promise<void> {
 
 export async function deletePinConfig(): Promise<void> {
   await chrome.storage.local.remove(PIN_CONFIG_KEY);
+}
+
+const UNLOCK_STATE_KEY = 'unlockState';
+
+export async function getUnlockState(): Promise<UnlockState> {
+  const result = await chrome.storage.local.get(UNLOCK_STATE_KEY);
+  return (result[UNLOCK_STATE_KEY] as UnlockState) || { unlockedUntil: 0 };
+}
+
+export async function saveUnlockState(state: UnlockState): Promise<void> {
+  await chrome.storage.local.set({ [UNLOCK_STATE_KEY]: state });
 }
