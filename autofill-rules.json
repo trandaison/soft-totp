@@ -14,6 +14,12 @@
     },
     "apps.nulab.com/signin/mfa": {
       "mfaInputSelector": "#authCode"
+    },
+    "github.com/sessions/two-factor/app": {
+      "mfaInputSelector": "#app_totp"
+    },
+    "id.atlassian.com/login/mfa": {
+      "mfaInputSelector": "two-step-verification-otp-code-input"
     }
   }
 }
