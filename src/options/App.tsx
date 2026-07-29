@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AccountEditor } from './AccountEditor';
+import { PinSettings } from './PinSettings';
 import {
   getAccounts,
   updateAccount,
@@ -120,6 +121,7 @@ export function App() {
           </button>
         </div>
       </div>
+      <PinSettings />
       {accounts.length === 0 ? (
         <div style={{
           textAlign: 'center',
