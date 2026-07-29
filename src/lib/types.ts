@@ -54,3 +54,40 @@ export interface AutofillStatusMessage extends Message {
   action: 'AUTOFILL_STATUS';
   payload: AutofillStatus;
 }
+
+export interface PinConfig {
+  pinHash: string;
+  salt: string;
+  iterations: number;
+  webAuthnCredential: {
+    credentialId: string;
+    publicKey: string;
+    transports?: string[];
+  } | null;
+  isSetup: boolean;
+}
+
+export interface SetupPinMessage extends Message {
+  action: 'SETUP_PIN';
+  payload: { pin: string; credential: { credentialId: string; publicKey: string; transports?: string[] } };
+}
+
+export interface ResetPinMessage extends Message {
+  action: 'RESET_PIN';
+  payload: { oldPin: string; newPin: string; assertion: { credentialId: string; authenticatorData: string; clientDataJSON: string; signature: string } };
+}
+
+export interface RemovePinMessage extends Message {
+  action: 'REMOVE_PIN';
+  payload: { pin: string; assertion: { credentialId: string; authenticatorData: string; clientDataJSON: string; signature: string } };
+}
+
+export interface VerifyPinMessage extends Message {
+  action: 'VERIFY_PIN';
+  payload: { pin: string };
+}
+
+export interface AutofillWithPinMessage extends Message {
+  action: 'AUTOFILL';
+  payload: { accounts: Account[]; pinSetup: boolean };
+}

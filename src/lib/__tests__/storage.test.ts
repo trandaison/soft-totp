@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Account } from '../types';
+import type { Account, PinConfig } from '../types';
 
 const mockStorage: Record<string, unknown> = {};
 
@@ -45,6 +45,9 @@ const {
   reorderAccounts,
   exportAccounts,
   importAccounts,
+  getPinConfig,
+  savePinConfig,
+  deletePinConfig,
 } = await import('../storage');
 
 beforeEach(() => {
@@ -112,5 +115,37 @@ describe('storage', () => {
     await importAccounts(json);
     const accounts = await getAccounts();
     expect(accounts).toEqual([testAccount]);
+  });
+});
+
+const mockPinConfig: PinConfig = {
+  pinHash: 'dGVzdA==',
+  salt: 'c2FsdA==',
+  iterations: 100000,
+  webAuthnCredential: null,
+  isSetup: true,
+};
+
+describe('PinConfig storage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return null when no config exists', async () => {
+    const result = await getPinConfig();
+    expect(result).toBeNull();
+  });
+
+  it('should save and retrieve config', async () => {
+    await savePinConfig(mockPinConfig);
+    const result = await getPinConfig();
+    expect(result).toEqual(mockPinConfig);
+  });
+
+  it('should delete config', async () => {
+    await savePinConfig(mockPinConfig);
+    await deletePinConfig();
+    const result = await getPinConfig();
+    expect(result).toBeNull();
   });
 });

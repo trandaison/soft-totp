@@ -1,6 +1,7 @@
-import type { Account } from './types';
+import type { Account, PinConfig } from './types';
 
 const STORAGE_KEY = 'accounts';
+const PIN_CONFIG_KEY = 'pinConfig';
 
 export async function getAccounts(): Promise<Account[]> {
   const result = await chrome.storage.local.get(STORAGE_KEY);
@@ -48,4 +49,17 @@ export async function importAccounts(json: string): Promise<void> {
   const parsed = JSON.parse(json);
   if (!Array.isArray(parsed)) throw new Error('Invalid format');
   await chrome.storage.local.set({ [STORAGE_KEY]: parsed });
+}
+
+export async function getPinConfig(): Promise<PinConfig | null> {
+  const result = await chrome.storage.local.get(PIN_CONFIG_KEY);
+  return (result[PIN_CONFIG_KEY] as PinConfig) || null;
+}
+
+export async function savePinConfig(config: PinConfig): Promise<void> {
+  await chrome.storage.local.set({ [PIN_CONFIG_KEY]: config });
+}
+
+export async function deletePinConfig(): Promise<void> {
+  await chrome.storage.local.remove(PIN_CONFIG_KEY);
 }
