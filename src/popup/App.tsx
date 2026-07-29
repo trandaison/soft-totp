@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AccountList } from './AccountList';
 import { AddAccountForm } from './AddAccountForm';
 import { EditAccountForm } from './EditAccountForm';
+import { PinGate } from './PinGate';
 import { getAccounts, saveAccount, deleteAccount, updateAccount } from '../lib/storage';
 import type { Account } from '../lib/types';
 import { colors } from '../lib/colors';
@@ -16,8 +17,28 @@ export function App() {
     name: string;
     logoUrl?: string;
   } | null>(null);
+  const [locked, setLocked] = useState<boolean | null>(null);
 
   useEffect(() => {
+    const port = chrome.runtime.connect({ name: 'popup' });
+
+    chrome.runtime.sendMessage({ action: 'CHECK_UNLOCK' }, (response) => {
+      if (response?.pinSetup && !response?.unlocked) {
+        setLocked(true);
+      } else {
+        setLocked(false);
+        loadAccounts();
+      }
+    });
+
+    return () => {
+      port.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (locked !== false) return;
+
     loadAccounts();
 
     chrome.storage.local.get('pendingQRScan', (result) => {
@@ -33,9 +54,11 @@ export function App() {
         setShowForm('add');
       }
     });
-  }, []);
+  }, [locked]);
 
   useEffect(() => {
+    if (locked !== false) return;
+
     const listener = (message: { action: string; payload?: unknown }) => {
       if (message.action === 'QR_SCANNED') {
         const payload = message.payload as {
@@ -50,7 +73,7 @@ export function App() {
     };
     chrome.runtime.onMessage.addListener(listener);
     return () => chrome.runtime.onMessage.removeListener(listener);
-  }, []);
+  }, [locked]);
 
   const loadAccounts = async () => {
     const loaded = await getAccounts();
@@ -88,6 +111,22 @@ export function App() {
     chrome.runtime.sendMessage({ action: 'SCAN_QR' });
     window.close();
   };
+
+  if (locked === null) {
+    return (
+      <div style={{ width: 350, minHeight: 400, background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: colors.textSecondary, fontSize: '14px' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (locked) {
+    return (
+      <div style={{ width: 350, minHeight: 400 }}>
+        <PinGate onUnlocked={() => setLocked(false)} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: 350, minHeight: 400, background: colors.bg }}>
