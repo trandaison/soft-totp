@@ -73,24 +73,18 @@ export function AutofillRulesDebug() {
       </div>
 
       {rules && ruleCount > 0 && (
-        <div style={{
+        <pre style={{
           background: colors.bg,
           borderRadius: '8px',
           padding: '12px',
-          maxHeight: '200px',
+          maxHeight: '300px',
           overflowY: 'auto',
           fontSize: '12px',
+          lineHeight: '1.5',
           fontFamily: 'monospace',
         }}>
-          {Object.entries(rules).map(([pattern, config]) => (
-            <div key={pattern} style={{ marginBottom: '6px' }}>
-              <div style={{ color: colors.primary, fontWeight: 600 }}>{pattern}</div>
-              <div style={{ color: colors.textSecondary, paddingLeft: '12px' }}>
-                → {config.mfaInputSelector}
-              </div>
-            </div>
-          ))}
-        </div>
+          {JSON.stringify(rules, null, 2)}
+        </pre>
       )}
 
       {rules && ruleCount === 0 && (

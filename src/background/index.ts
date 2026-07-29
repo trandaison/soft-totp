@@ -31,10 +31,11 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
   if (!tab.url) return;
 
   const accounts = await getAccounts();
-  const matchedAccounts = accounts
+
+  // First: match by account urlPatterns
+  let matchedAccounts = accounts
     .filter((a) => a.urlPatterns?.some((pattern) => matchURL(pattern, tab.url!)))
     .map((account) => {
-      // User custom takes priority; fall back to predefined
       if (account.mfaInputSelector) return account;
       const predefinedSelector = getMfaSelector(tab.url!);
       if (predefinedSelector) {
@@ -42,6 +43,22 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
       }
       return account;
     });
+
+  // Second: if no match, try predefined rules + issuer/domain matching
+  if (matchedAccounts.length === 0) {
+    const predefinedSelector = getMfaSelector(tab.url!);
+    if (predefinedSelector) {
+      const hostname = new URL(tab.url!).hostname;
+      const domain = hostname.replace(/^(www|accounts|apps|auth|login|signin|sso)\./, '');
+      matchedAccounts = accounts
+        .filter((a) => {
+          if (!a.issuer) return false;
+          const issuerDomain = a.issuer.toLowerCase().replace(/\s+/g, '');
+          return domain.includes(issuerDomain) || issuerDomain.includes(domain.split('.')[0]);
+        })
+        .map((account) => ({ ...account, mfaInputSelector: predefinedSelector }));
+    }
+  }
 
   if (matchedAccounts.length === 0) return;
 
