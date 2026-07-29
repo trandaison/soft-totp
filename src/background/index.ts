@@ -1,5 +1,5 @@
 import { matchURL } from '../lib/url-match';
-import { getAccounts, getPinConfig, savePinConfig, deletePinConfig } from '../lib/storage';
+import { getAccounts, getPinConfig, savePinConfig, deletePinConfig, getUnlockState, saveUnlockState } from '../lib/storage';
 import { derivePinHash, verifyPin, generateSalt } from '../lib/pin';
 import { verifyAssertion } from '../lib/webauthn';
 import { fetchAutofillRules, getMfaSelector, getCachedRules } from '../lib/autofill-rules';
@@ -89,6 +89,44 @@ chrome.runtime.onMessage.addListener(
       getPinConfig().then((config) => {
         sendResponse({ config: config ? { isSetup: config.isSetup, credentialId: config.webAuthnCredential?.credentialId } : null });
       });
+      return true;
+    }
+
+    if (message.action === 'CHECK_UNLOCK') {
+      (async () => {
+        try {
+          const [pinConfig, unlockState] = await Promise.all([getPinConfig(), getUnlockState()]);
+          const pinSetup = pinConfig?.isSetup ?? false;
+          const unlocked = pinSetup ? Date.now() < unlockState.unlockedUntil : true;
+          sendResponse({ unlocked, pinSetup });
+        } catch (error) {
+          sendResponse({ unlocked: false, pinSetup: false, error: (error as Error).message });
+        }
+      })();
+      return true;
+    }
+
+    if (message.action === 'DO_UNLOCK') {
+      const { pin } = message.payload as { pin: string };
+      (async () => {
+        try {
+          const config = await getPinConfig();
+          if (!config || !config.isSetup) {
+            sendResponse({ success: false, error: 'PIN not configured' });
+            return;
+          }
+          const salt = Uint8Array.from(atob(config.salt), (c) => c.charCodeAt(0));
+          const isValid = await verifyPin(pin, config.pinHash, salt, config.iterations);
+          if (!isValid) {
+            sendResponse({ success: false });
+            return;
+          }
+          await saveUnlockState({ unlockedUntil: Infinity });
+          sendResponse({ success: true });
+        } catch (error) {
+          sendResponse({ success: false, error: (error as Error).message });
+        }
+      })();
       return true;
     }
 
@@ -312,3 +350,11 @@ chrome.runtime.onMessage.addListener(
     }
   }
 );
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'popup') {
+    port.onDisconnect.addListener(() => {
+      saveUnlockState({ unlockedUntil: Date.now() + 10000 }).catch(() => {});
+    });
+  }
+});
