@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Account } from '../../lib/types';
 
-const mockSendMessage = vi.fn();
+const mockSendMessage = vi.fn().mockResolvedValue(undefined);
 const mockTabsGet = vi.fn();
 const mockTabsQuery = vi.fn();
 const mockCaptureVisibleTab = vi.fn();
-const mockTabsSendMessage = vi.fn();
+const mockTabsSendMessage = vi.fn().mockResolvedValue(undefined);
 const mockGetAccounts = vi.fn();
 const mockGetPinConfig = vi.fn();
 const mockMatchURL = vi.fn();
@@ -63,6 +63,9 @@ beforeEach(() => {
         addListener: vi.fn((listener: (message: { action: string; payload?: unknown }, sender: { tab?: { windowId?: number; url?: string } }, sendResponse: (response: unknown) => void) => boolean | void) => {
           runtimeMessageListeners.push(listener);
         }),
+      },
+      onConnect: {
+        addListener: vi.fn(),
       },
       sendMessage: mockSendMessage,
     },
