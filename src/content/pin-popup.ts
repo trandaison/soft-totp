@@ -14,22 +14,23 @@ export function showPinPopup(
 
   const style = document.createElement('style');
   style.textContent = `
-    @keyframes twofa-drop {
+    @keyframes twofa-bounce-in {
       0% {
-        transform: translate(100px, -100px) scale(0.6);
+        transform: translate(80px, -80px) scale(0.3);
         opacity: 0;
       }
-      50% {
+      40% {
+        transform: translate(-12px, 8px) scale(1.12);
         opacity: 1;
       }
       60% {
-        transform: translate(-8px, 6px) scale(1.05);
+        transform: translate(6px, -4px) scale(0.95);
       }
       75% {
-        transform: translate(3px, -2px) scale(0.98);
+        transform: translate(-3px, 2px) scale(1.03);
       }
       87% {
-        transform: translate(-1px, 1px) scale(1.02);
+        transform: translate(1px, -1px) scale(0.99);
       }
       100% {
         transform: translate(0, 0) scale(1);
@@ -56,11 +57,11 @@ export function showPinPopup(
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.25);
       backdrop-filter: blur(4px);
       opacity: 0;
       pointer-events: auto;
-      animation: twofa-backdrop-in 0.4s ease-out 0.3s forwards;
+      animation: twofa-backdrop-in 0.3s ease-out 0.15s forwards;
     }
 
     .popup {
@@ -68,16 +69,16 @@ export function showPinPopup(
       top: 20px;
       right: 20px;
       width: 320px;
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.65);
       backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.1);
       border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
       padding: 24px;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #fff;
+      color: #1a1a2e;
       pointer-events: auto;
-      animation: twofa-drop 0.8s cubic-bezier(0.2, 0, 0, 1) forwards;
+      animation: twofa-bounce-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       opacity: 0;
     }
 
@@ -92,7 +93,8 @@ export function showPinPopup(
       gap: 8px;
       margin-bottom: 20px;
       font-size: 15px;
-      font-weight: 500;
+      font-weight: 600;
+      color: #1a1a2e;
     }
 
     .header-icon {
@@ -109,10 +111,10 @@ export function showPinPopup(
     .pin-input {
       width: 40px;
       height: 48px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      border: 2px solid rgba(0, 0, 0, 0.15);
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      background: rgba(255, 255, 255, 0.7);
+      color: #1a1a2e;
       font-size: 20px;
       font-weight: 600;
       text-align: center;
@@ -122,34 +124,34 @@ export function showPinPopup(
     }
 
     .pin-input:focus {
-      border-color: rgba(255, 255, 255, 0.6);
-      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(28, 39, 76, 0.5);
+      background: rgba(255, 255, 255, 0.9);
     }
 
     .pin-input::placeholder {
-      color: rgba(255, 255, 255, 0.3);
+      color: rgba(0, 0, 0, 0.2);
     }
 
     .account-select {
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.15);
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      background: rgba(255, 255, 255, 0.7);
+      color: #1a1a2e;
       font-size: 14px;
       margin-bottom: 16px;
       outline: none;
       cursor: pointer;
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%231a1a2e' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 12px center;
     }
 
     .account-select option {
-      background: #1a1a2e;
-      color: #fff;
+      background: #fff;
+      color: #1a1a2e;
     }
 
     .submit-btn {
@@ -157,7 +159,7 @@ export function showPinPopup(
       padding: 12px;
       border: none;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.2);
+      background: #1C274C;
       color: #fff;
       font-size: 14px;
       font-weight: 600;
@@ -166,7 +168,7 @@ export function showPinPopup(
     }
 
     .submit-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: #2E86AB;
     }
 
     .submit-btn:disabled {
@@ -175,7 +177,7 @@ export function showPinPopup(
     }
 
     .error-msg {
-      color: #ff6b6b;
+      color: #DC3545;
       font-size: 13px;
       text-align: center;
       margin-top: 12px;
@@ -188,7 +190,7 @@ export function showPinPopup(
       right: 12px;
       background: none;
       border: none;
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(0, 0, 0, 0.4);
       font-size: 18px;
       cursor: pointer;
       padding: 4px;
@@ -196,7 +198,7 @@ export function showPinPopup(
     }
 
     .close-btn:hover {
-      color: #fff;
+      color: #1a1a2e;
     }
   `;
   shadow.appendChild(style);
@@ -211,7 +213,6 @@ export function showPinPopup(
   const popup = document.createElement('div');
   popup.className = 'popup';
 
-  // Close button
   const closeBtn = document.createElement('button');
   closeBtn.className = 'close-btn';
   closeBtn.textContent = '×';
@@ -220,12 +221,10 @@ export function showPinPopup(
     onDismiss();
   });
 
-  // Header
   const header = document.createElement('div');
   header.className = 'header';
   header.innerHTML = '<span class="header-icon">🔒</span> Nhập mã PIN để tự động fill';
 
-  // PIN inputs
   const pinInputsContainer = document.createElement('div');
   pinInputsContainer.className = 'pin-inputs';
 
@@ -257,7 +256,6 @@ export function showPinPopup(
       }
     });
 
-    // Handle paste
     input.addEventListener('paste', (e) => {
       e.preventDefault();
       const pasted = e.clipboardData?.getData('text') || '';
@@ -277,7 +275,6 @@ export function showPinPopup(
     pinInputsContainer.appendChild(input);
   }
 
-  // Account select (if multiple)
   let selectedAccount = accounts[0];
   let accountSelect: HTMLSelectElement | null = null;
 
@@ -298,7 +295,6 @@ export function showPinPopup(
     });
   }
 
-  // Submit button
   const submitBtn = document.createElement('button');
   submitBtn.className = 'submit-btn';
   submitBtn.textContent = 'Xác nhận';
@@ -309,7 +305,6 @@ export function showPinPopup(
     submitBtn.disabled = !allFilled;
   }
 
-  // Error message
   const errorMsg = document.createElement('div');
   errorMsg.className = 'error-msg';
 
@@ -348,7 +343,6 @@ export function showPinPopup(
     }
   });
 
-  // Assemble popup
   popup.appendChild(closeBtn);
   popup.appendChild(header);
   popup.appendChild(pinInputsContainer);
@@ -361,8 +355,7 @@ export function showPinPopup(
   shadow.appendChild(backdrop);
   shadow.appendChild(popup);
 
-  // Focus first input after animation
   setTimeout(() => {
     pinInputs[0].focus();
-  }, 800);
+  }, 450);
 }

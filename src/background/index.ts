@@ -37,13 +37,21 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
   const pinConfig = await getPinConfig();
   const pinSetup = pinConfig?.isSetup ?? false;
 
-  try {
-    await chrome.tabs.sendMessage(details.tabId, {
-      action: 'AUTOFILL',
-      payload: { accounts: matchedAccounts, pinSetup },
-    });
-  } catch {
-    // Content script not ready yet, ignore
+  const message = {
+    action: 'AUTOFILL',
+    payload: { accounts: matchedAccounts, pinSetup },
+  };
+
+  // Retry up to 5 times with 200ms delay — content script may not be ready on F5 refresh
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await chrome.tabs.sendMessage(details.tabId, message);
+      return;
+    } catch {
+      if (attempt < 4) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+    }
   }
 });
 
