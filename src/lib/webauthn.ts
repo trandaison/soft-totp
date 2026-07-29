@@ -51,6 +51,39 @@ export async function registerCredential(): Promise<WebAuthnCredential> {
   };
 }
 
+export async function verifyAssertion(
+  assertion: WebAuthnAssertion,
+  publicKeyBase64: string
+): Promise<boolean> {
+  try {
+    const publicKeyBuffer = Uint8Array.from(atob(publicKeyBase64), (c) => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey(
+      'spki',
+      publicKeyBuffer,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['verify']
+    );
+
+    const authenticatorData = Uint8Array.from(atob(assertion.authenticatorData), (c) => c.charCodeAt(0));
+    const clientDataJSON = Uint8Array.from(atob(assertion.clientDataJSON), (c) => c.charCodeAt(0));
+    const signature = Uint8Array.from(atob(assertion.signature), (c) => c.charCodeAt(0));
+
+    const signedData = new Uint8Array(authenticatorData.length + clientDataJSON.length);
+    signedData.set(authenticatorData);
+    signedData.set(clientDataJSON, authenticatorData.length);
+
+    return await crypto.subtle.verify(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      key,
+      signature,
+      signedData
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function authenticateCredential(
   credentialId: string
 ): Promise<WebAuthnAssertion> {

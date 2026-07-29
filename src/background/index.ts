@@ -1,6 +1,7 @@
 import { matchURL } from '../lib/url-match';
 import { getAccounts, getPinConfig, savePinConfig, deletePinConfig } from '../lib/storage';
 import { derivePinHash, verifyPin, generateSalt } from '../lib/pin';
+import { verifyAssertion } from '../lib/webauthn';
 import type { Message, PinConfig } from '../lib/types';
 
 async function fetchFaviconAsBase64(domain: string): Promise<string | undefined> {
@@ -46,7 +47,7 @@ chrome.runtime.onMessage.addListener(
   (message: Message, sender, sendResponse) => {
     if (message.action === 'GET_PIN_CONFIG') {
       getPinConfig().then((config) => {
-        sendResponse({ config: config ? { isSetup: config.isSetup, webAuthnCredential: config.webAuthnCredential } : null });
+        sendResponse({ config: config ? { isSetup: config.isSetup, credentialId: config.webAuthnCredential?.credentialId } : null });
       });
       return true;
     }
@@ -126,6 +127,12 @@ chrome.runtime.onMessage.addListener(
             return;
           }
 
+          const isValidAssertion = await verifyAssertion(assertion, config.webAuthnCredential.publicKey);
+          if (!isValidAssertion) {
+            sendResponse({ success: false, error: 'WebAuthn assertion verification failed' });
+            return;
+          }
+
           const newSalt = generateSalt();
           const newPinHash = await derivePinHash(newPin, newSalt, 100000);
 
@@ -168,6 +175,12 @@ chrome.runtime.onMessage.addListener(
 
           if (!config.webAuthnCredential || config.webAuthnCredential.credentialId !== assertion.credentialId) {
             sendResponse({ success: false, error: 'WebAuthn credential mismatch' });
+            return;
+          }
+
+          const isValidAssertion = await verifyAssertion(assertion, config.webAuthnCredential.publicKey);
+          if (!isValidAssertion) {
+            sendResponse({ success: false, error: 'WebAuthn assertion verification failed' });
             return;
           }
 

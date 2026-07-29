@@ -1,10 +1,5 @@
 import type { Account } from '../lib/types';
 
-interface PinPopupResult {
-  success: boolean;
-  selectedAccount?: Account;
-}
-
 export function showPinPopup(
   accounts: Account[],
   onVerified: (account: Account) => void,

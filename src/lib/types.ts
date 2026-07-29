@@ -86,8 +86,3 @@ export interface VerifyPinMessage extends Message {
   action: 'VERIFY_PIN';
   payload: { pin: string };
 }
-
-export interface AutofillWithPinMessage extends Message {
-  action: 'AUTOFILL';
-  payload: { accounts: Account[]; pinSetup: boolean };
-}
