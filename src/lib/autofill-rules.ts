@@ -21,6 +21,10 @@ export function resetForTesting(): void {
   cachedRules = null;
 }
 
+export function getCachedRules(): Record<string, { mfaInputSelector: string }> | null {
+  return cachedRules;
+}
+
 export function getMfaSelector(url: string): string | null {
   if (!cachedRules) return null;
   for (const [pattern, config] of Object.entries(cachedRules)) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AccountEditor } from './AccountEditor';
 import { PinSettings } from './PinSettings';
+import { AutofillRulesDebug } from './AutofillRulesDebug';
 import {
   getAccounts,
   updateAccount,
@@ -122,6 +123,7 @@ export function App() {
         </div>
       </div>
       <PinSettings />
+      <AutofillRulesDebug />
       {accounts.length === 0 ? (
         <div style={{
           textAlign: 'center',

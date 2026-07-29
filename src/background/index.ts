@@ -2,7 +2,7 @@ import { matchURL } from '../lib/url-match';
 import { getAccounts, getPinConfig, savePinConfig, deletePinConfig } from '../lib/storage';
 import { derivePinHash, verifyPin, generateSalt } from '../lib/pin';
 import { verifyAssertion } from '../lib/webauthn';
-import { fetchAutofillRules, getMfaSelector } from '../lib/autofill-rules';
+import { fetchAutofillRules, getMfaSelector, getCachedRules } from '../lib/autofill-rules';
 import type { Message, PinConfig } from '../lib/types';
 
 fetchAutofillRules();
@@ -281,6 +281,17 @@ chrome.runtime.onMessage.addListener(
       }).catch(() => {
         // No listener for AUTOFILL_STATUS, ignore
       });
+    }
+
+    if (message.action === 'GET_AUTOFILL_RULES') {
+      sendResponse({ rules: getCachedRules() });
+    }
+
+    if (message.action === 'REFRESH_AUTOFILL_RULES') {
+      fetchAutofillRules().then(() => {
+        sendResponse({ rules: getCachedRules() });
+      });
+      return true;
     }
   }
 );
