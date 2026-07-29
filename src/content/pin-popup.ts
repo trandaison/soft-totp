@@ -82,11 +82,6 @@ export function showPinPopup(
       opacity: 0;
     }
 
-    .popup.error {
-      animation: twofa-shake 0.4s ease-in-out;
-      opacity: 1;
-    }
-
     .header {
       display: flex;
       align-items: center;
@@ -305,12 +300,10 @@ export function showPinPopup(
       } else {
         // Show error via red borders + shake
         pinInputs.forEach((input) => input.classList.add('error'));
-        popup.classList.add('error');
+        popup.style.animation = 'twofa-shake 0.4s ease-in-out';
         setTimeout(() => {
-          popup.classList.remove('error');
-        }, 400);
-        // Clear inputs after shake
-        setTimeout(() => {
+          popup.style.animation = 'none';
+          // Clear inputs after shake
           pinInputs.forEach((input) => {
             input.value = '';
             input.classList.remove('error');
@@ -320,9 +313,9 @@ export function showPinPopup(
       }
     } catch (err) {
       pinInputs.forEach((input) => input.classList.add('error'));
-      popup.classList.add('error');
+      popup.style.animation = 'twofa-shake 0.4s ease-in-out';
       setTimeout(() => {
-        popup.classList.remove('error');
+        popup.style.animation = 'none';
         pinInputs.forEach((input) => {
           input.value = '';
           input.classList.remove('error');
@@ -343,7 +336,11 @@ export function showPinPopup(
   shadow.appendChild(backdrop);
   shadow.appendChild(popup);
 
+  // After open animation completes, remove animation so it doesn't replay
   setTimeout(() => {
+    popup.style.animation = 'none';
+    popup.style.opacity = '1';
+    popup.style.transform = 'translate(0, 0) scale(1)';
     pinInputs[0].focus();
   }, 450);
 }
