@@ -1,42 +1,12 @@
 import { useState, useEffect } from 'react';
-import { AccountEditor } from './AccountEditor';
+import { Sidebar, Subpage } from './Sidebar';
+import { PinLogin } from './PinLogin';
 import { PinSettings } from './PinSettings';
 import { AutofillRulesDebug } from './AutofillRulesDebug';
-import {
-  getAccounts,
-  updateAccount,
-  deleteAccount,
-  reorderAccounts,
-  exportAccounts,
-  importAccounts,
-} from '../lib/storage';
-import type { Account } from '../lib/types';
+import { exportAccounts, importAccounts } from '../lib/storage';
 import { colors } from '../lib/colors';
 
-export function App() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-
-  useEffect(() => {
-    loadAccounts();
-  }, []);
-
-  const loadAccounts = async () => {
-    const loaded = await getAccounts();
-    setAccounts(loaded.sort((a, b) => a.sortOrder - b.sortOrder));
-  };
-
-  const handleUpdate = async (account: Account) => {
-    await updateAccount(account);
-    await loadAccounts();
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this account?')) {
-      await deleteAccount(id);
-      await loadAccounts();
-    }
-  };
-
+function ImportExportPage() {
   const handleExport = async () => {
     const json = await exportAccounts();
     const blob = new Blob([json], { type: 'application/json' });
@@ -58,7 +28,7 @@ export function App() {
       const text = await file.text();
       try {
         await importAccounts(text);
-        await loadAccounts();
+        alert('Import successful');
       } catch {
         alert('Invalid file format');
       }
@@ -67,86 +37,108 @@ export function App() {
   };
 
   return (
+    <div>
+      <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 600, color: colors.textPrimary }}>
+        Import & Export
+      </h2>
+      <p style={{ color: colors.textSecondary, fontSize: '14px', marginBottom: '20px' }}>
+        Export accounts to JSON file or import from a backup.
+      </p>
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <button
+          onClick={handleExport}
+          style={{
+            background: colors.primaryLight,
+            color: colors.textLight,
+            border: 'none',
+            borderRadius: '8px',
+            padding: '12px 24px',
+            cursor: 'pointer',
+            fontWeight: 500,
+            fontSize: '14px',
+          }}
+        >
+          Export Accounts
+        </button>
+        <button
+          onClick={handleImport}
+          style={{
+            background: colors.primary,
+            color: colors.textLight,
+            border: 'none',
+            borderRadius: '8px',
+            padding: '12px 24px',
+            cursor: 'pointer',
+            fontWeight: 500,
+            fontSize: '14px',
+          }}
+        >
+          Import Accounts
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function App() {
+  const [activePage, setActivePage] = useState<Subpage>('rules');
+  const [locked, setLocked] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    chrome.runtime.sendMessage({ action: 'CHECK_UNLOCK' }, (response) => {
+      if (response?.pinSetup && !response?.unlocked) {
+        setLocked(true);
+      } else {
+        setLocked(false);
+      }
+    });
+  }, []);
+
+  if (locked === null) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: colors.bg,
+      }}>
+        <div style={{ color: colors.textSecondary, fontSize: '14px' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (locked) {
+    return <PinLogin onUnlocked={() => setLocked(false)} />;
+  }
+
+  return (
     <div style={{
-      maxWidth: 800,
-      margin: '0 auto',
-      padding: 24,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       background: colors.bg,
       minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
-      <div style={{
+      <header style={{
+        background: colors.bgCard,
+        borderBottom: `1px solid ${colors.borderLight}`,
+        padding: '16px 24px',
         display: 'flex',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
-        paddingBottom: 16,
-        borderBottom: `2px solid ${colors.borderLight}`,
       }}>
-        <h1 style={{
-          margin: 0,
-          color: colors.textPrimary,
-          fontSize: '24px',
-          fontWeight: 600,
-        }}>
+        <h1 style={{ margin: 0, color: colors.textPrimary, fontSize: '20px', fontWeight: 600 }}>
           Soft TOTP
         </h1>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={handleExport}
-            style={{
-              background: colors.primaryLight,
-              color: colors.textLight,
-              border: 'none',
-              borderRadius: '6px',
-              padding: '10px 20px',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
-          >
-            Export
-          </button>
-          <button
-            onClick={handleImport}
-            style={{
-              background: colors.primary,
-              color: colors.textLight,
-              border: 'none',
-              borderRadius: '6px',
-              padding: '10px 20px',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
-          >
-            Import
-          </button>
-        </div>
+      </header>
+      <div style={{ display: 'flex', flex: 1 }}>
+        <Sidebar active={activePage} onChange={setActivePage} />
+        <main style={{ flex: 1, padding: '24px 32px' }}>
+          {activePage === 'rules' && <AutofillRulesDebug />}
+          {activePage === 'security' && <PinSettings />}
+          {activePage === 'import-export' && <ImportExportPage />}
+        </main>
       </div>
-      <PinSettings />
-      <AutofillRulesDebug />
-      {accounts.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 40px',
-          color: colors.textSecondary,
-          background: colors.bgCard,
-          borderRadius: '12px',
-          border: `1px dashed ${colors.border}`,
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>🔐</div>
-          <div style={{ fontSize: '16px', fontWeight: 500 }}>No accounts configured</div>
-          <div style={{ fontSize: '14px', marginTop: '8px' }}>Add accounts from the popup extension</div>
-        </div>
-      ) : (
-        accounts.map((account) => (
-          <AccountEditor
-            key={account.id}
-            account={account}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
-          />
-        ))
-      )}
     </div>
   );
 }
