@@ -17,6 +17,10 @@ export async function fetchAutofillRules(): Promise<void> {
   }
 }
 
+export function resetForTesting(): void {
+  cachedRules = null;
+}
+
 export function getMfaSelector(url: string): string | null {
   if (!cachedRules) return null;
   for (const [pattern, config] of Object.entries(cachedRules)) {

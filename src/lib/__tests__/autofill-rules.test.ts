@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchAutofillRules, getMfaSelector } from '../autofill-rules';
+import { fetchAutofillRules, getMfaSelector, resetForTesting } from '../autofill-rules';
 
 describe('autofill-rules', () => {
   beforeEach(() => {
+    resetForTesting();
     vi.restoreAllMocks();
   });
 
