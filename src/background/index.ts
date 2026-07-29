@@ -354,7 +354,11 @@ chrome.runtime.onMessage.addListener(
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'popup') {
     port.onDisconnect.addListener(() => {
-      saveUnlockState({ unlockedUntil: Date.now() + 10000 }).catch(() => {});
+      getUnlockState().then((state) => {
+        if (Date.now() < state.unlockedUntil) {
+          saveUnlockState({ unlockedUntil: Date.now() + 10000 }).catch(() => {});
+        }
+      }).catch(() => {});
     });
   }
 });
