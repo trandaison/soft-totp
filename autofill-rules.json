@@ -20,6 +20,12 @@
     },
     "id.atlassian.com/login/mfa": {
       "mfaInputSelector": "two-step-verification-otp-code-input"
+    },
+    "signin.aws.amazon.com/oauth": {
+      "mfaInputSelector": "#mfaCode"
+    },
+    "signin.aws.amazon.com/signin": {
+      "mfaInputSelector": "#mfaCode"
     }
   }
 }
